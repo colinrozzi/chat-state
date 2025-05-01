@@ -1,10 +1,6 @@
-use crate::bindings::ntwk::theater::message_server::message_request;
 use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::timing;
-use crate::protocol::{AnthropicRequest, AnthropicResponse, CompletionRequest, AnthropicMessage};
 use crate::state::{ChatMessage, ChatState};
-use serde_json::to_vec;
-use serde_json::from_slice;
 
 /// Get the current timestamp in seconds
 pub fn current_timestamp() -> Result<u64, String> {

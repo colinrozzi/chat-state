@@ -1,5 +1,4 @@
 mod bindings;
-mod bindings;
 mod protocol;
 mod state;
 mod utils;
@@ -170,33 +169,35 @@ impl MessageServerClient for Component {
                                 
                                 // Get the assistant message
                                 let assistant_message = chat_state
-                        .messages
-                        .iter()
-                        .find(|m| m.id == assistant_message_id)
-                        .ok_or("Failed to find assistant message")?
-                        .clone();
-
-                    // Simple title generation if this is the first message exchange
-                    if chat_state.title.starts_with("Conversation ")
-                        && chat_state.messages.len() >= 4
-                    {
-                        if let Some(first_message) = chat_state.messages.first() {
-                            // Generate a title based on the first user message
-                            let content = &first_message.content;
-                            let title = if content.len() > 30 {
-                                format!("{}...", &content[0..30])
+                                    .messages
+                                    .iter()
+                                    .find(|m| m.id == assistant_message_id)
+                                    .ok_or("Failed to find assistant message")?
+                                    .clone();
+                                
+                                create_message_response(assistant_message)
                             } else {
-                                content.clone()
-                            };
-                            chat_state.update_title(title, timestamp);
-                        }
+                                create_error_response("missing_completion", "No completion in successful response")
+                            }
+                        },
+                        "error" => {
+                            create_error_response(
+                                "anthropic_error",
+                                &format!(
+                                    "Error from Anthropic API: {}", 
+                                    anthropic_response.error.unwrap_or_else(|| "Unknown error".to_string())
+                                )
+                            )
+                        },
+                        _ => create_error_response(
+                            "unknown_status", 
+                            &format!("Unknown response status: {}", anthropic_response.status)
+                        ),
                     }
-
-                    create_message_response(assistant_message)
                 } else {
                     create_error_response("missing_message", "Message content is required")
                 }
-            }
+            },
             "update_settings" => {
                 if let Some(settings) = request.settings {
                     chat_state.update_settings(settings.clone(), timestamp);
@@ -204,7 +205,7 @@ impl MessageServerClient for Component {
                 } else {
                     create_error_response("missing_settings", "Settings are required")
                 }
-            }
+            },
             "update_system_prompt" => {
                 chat_state.update_system_prompt(request.system_prompt, timestamp);
                 ChatStateResponse {
@@ -214,7 +215,7 @@ impl MessageServerClient for Component {
                     settings: None,
                     error: None,
                 }
-            }
+            },
             "update_title" => {
                 if let Some(title) = request.title {
                     chat_state.update_title(title, timestamp);
@@ -228,7 +229,7 @@ impl MessageServerClient for Component {
                 } else {
                     create_error_response("missing_title", "Title is required")
                 }
-            }
+            },
             "get_history" => {
                 let limit = request.history_params.as_ref().and_then(|p| p.limit);
                 let before_timestamp = request
@@ -237,7 +238,7 @@ impl MessageServerClient for Component {
                     .and_then(|p| p.before_timestamp);
                 let messages = chat_state.get_messages(limit, before_timestamp);
                 create_history_response(messages)
-            }
+            },
             _ => create_error_response(
                 "unknown_action",
                 &format!("Unknown action: {}", request.action),

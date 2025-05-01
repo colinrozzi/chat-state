@@ -1,12 +1,12 @@
 {
   "last_build_time": {
-    "secs_since_epoch": 1746130880,
-    "nanos_since_epoch": 925136000
+    "secs_since_epoch": 1746131532,
+    "nanos_since_epoch": 605758000
   },
   "build_status": "Failed",
   "component_hash": null,
-  "build_log": "/Users/colinrozzi/work/actor-registry/chat-state/.build_info/build_20250501_162107.log",
+  "build_log": "/Users/colinrozzi/work/actor-registry/chat-state/.build_info/build_20250501_163159.log",
   "build_duration": 13,
   "component_size": null,
-  "error_message": "error: builder for '/nix/store/1xvjrd7ydc74m4x5g1hwxipwf3829k1q-chat-state-0.1.0.drv' failed with exit code 101;"
+  "error_message": "error: builder for '/nix/store/zmb4f8p2gpxba0wqwa7mn48grvdpjxmv-chat-state-0.1.0.drv' failed with exit code 101;"
 }
