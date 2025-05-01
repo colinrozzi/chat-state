@@ -6,61 +6,52 @@ mod utils;
 use crate::bindings::exports::ntwk::theater::actor::Guest;
 use crate::bindings::exports::ntwk::theater::message_server_client::Guest as MessageServerClient;
 use crate::bindings::ntwk::theater::runtime::log;
-use crate::bindings::ntwk::theater::types::State;
 use crate::protocol::{ChatStateRequest, ChatStateResponse, create_error_response, create_history_response, create_message_response, create_settings_response};
-use crate::state::{add_assistant_message, add_user_message, get_messages, init_state, update_settings, update_system_prompt, update_title, ChatState};
+use crate::state::ChatState;
 use crate::utils::current_timestamp;
 use serde_json::{from_slice, from_str, to_vec};
-// use std::time::{SystemTime, UNIX_EPOCH}; // Not needed with current_timestamp helper
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct InitData {
+    conversation_id: String,
+    parent_interface_id: String,
+    anthropic_proxy_id: String,
+    system_prompt: Option<String>,
+}
 
 struct Component;
 impl Guest for Component {
-    fn init(_state: State, params: (String,)) -> Result<(State,), String> {
+    fn init(init_state: Option<Vec<u8>>, params: (String,)) -> Result<(Option<Vec<u8>>,), String> {
         log("Initializing chat-state actor");
         let (param,) = params;
-        
-        // Parse initialization parameters
-        let init_params: Result<serde_json::Value, _> = from_str(&param);
-        match init_params {
-            Ok(params) => {
-                // Extract required parameters
-                let conversation_id = params["conversation_id"].as_str()
-                    .ok_or("Missing conversation_id parameter")?
-                    .to_string();
-                let parent_interface_id = params["parent_interface_id"].as_str()
-                    .ok_or("Missing parent_interface_id parameter")?
-                    .to_string();
-                let anthropic_proxy_id = params["anthropic_proxy_id"].as_str()
-                    .ok_or("Missing anthropic_proxy_id parameter")?
-                    .to_string();
-                
-                // Extract optional parameters
-                let system_prompt = params["system_prompt"].as_str().map(|s| s.to_string());
-                
-                // Get current timestamp
-                let timestamp = current_timestamp()?;
-                
-                // Initialize state
-                let chat_state = init_state(
-                    conversation_id,
-                    parent_interface_id,
-                    anthropic_proxy_id,
-                    system_prompt,
-                    timestamp,
-                );
-                
-                // Serialize state
-                let state_bytes = to_vec(&chat_state)
-                    .map_err(|e| format!("Error serializing state: {}", e))?;
-                
-                log("Chat state actor initialized successfully");
-                Ok((Some(state_bytes),))
+
+
+        let state = match init_state {
+            Some(state) => {
+                let parsed_init_state: InitData = from_slice(&state)
+                    .map_err(|e| format!("Error deserializing init state: {}", e))?;
+                log(&format!("Chat state actor initialized with conversation_id: {}", parsed_init_state.conversation_id));
+                ChatState::new(
+                    param,
+                    parsed_init_state.conversation_id,
+                    parsed_init_state.parent_interface_id,
+                    parsed_init_state.anthropic_proxy_id,
+                    parsed_init_state.system_prompt,
+                    current_timestamp()?,
+                )
             },
-            Err(e) => {
-                log(&format!("Failed to parse initialization parameters: {}", e));
-                Err(format!("Failed to parse initialization parameters: {}", e))
+            None => {
+                log("Chat state actor is not initialized");
+                return Err("Chat state actor is not initialized".to_string())
             }
-        }
+        };
+        
+        // Serialize the state to bytes
+        let state_bytes = to_vec(&state)
+            .map_err(|e| format!("Error serializing state: {}", e))?;
+        log("Chat state actor initialized successfully");
+        Ok((Some(state_bytes),))
     }
 }
 

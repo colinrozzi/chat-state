@@ -4,20 +4,22 @@ use std::collections::HashMap;
 /// Main state structure for the chat-state actor
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChatState {
+    pub id: String,
+
     /// Basic information
     pub conversation_id: String,
     pub title: String,
     pub created_at: u64,
     pub updated_at: u64,
-    
+
     /// Actor references
     pub parent_interface_id: String,
     pub anthropic_proxy_id: String,
-    
+
     /// Conversation content
     pub system_prompt: Option<String>,
     pub messages: Vec<ChatMessage>,
-    
+
     /// Conversation settings
     pub settings: ConversationSettings,
 }
@@ -27,16 +29,16 @@ pub struct ChatState {
 pub struct ChatMessage {
     /// Unique message identifier
     pub id: String,
-    
+
     /// Message role: "user" or "assistant"
     pub role: String,
-    
+
     /// Message content
     pub content: String,
-    
+
     /// Timestamp when the message was created
     pub timestamp: u64,
-    
+
     /// Optional metadata about the message
     pub metadata: Option<MessageMetadata>,
 }
@@ -46,10 +48,10 @@ pub struct ChatMessage {
 pub struct MessageMetadata {
     /// Token count of the message
     pub token_count: Option<u32>,
-    
+
     /// Time taken to generate response (for assistant messages)
     pub response_time_ms: Option<u64>,
-    
+
     /// Any additional metadata fields
     pub additional: Option<HashMap<String, String>>,
 }
@@ -59,148 +61,140 @@ pub struct MessageMetadata {
 pub struct ConversationSettings {
     /// Model to use (e.g., "claude-3-7-sonnet-20250219")
     pub model: String,
-    
+
     /// Temperature setting (0.0 to 1.0)
     pub temperature: f32,
-    
+
     /// Maximum tokens to generate
     pub max_tokens: u32,
-    
+
     /// Top-p setting (optional)
     pub top_p: Option<f32>,
-    
+
     /// Any additional model parameters
     pub additional_params: Option<HashMap<String, serde_json::Value>>,
 }
 
-/// Initialize a new state with default values
-pub fn init_state(
-    conversation_id: String,
-    parent_interface_id: String,
-    anthropic_proxy_id: String,
-    system_prompt: Option<String>,
-    timestamp: u64,
-) -> ChatState {
-    ChatState {
-        conversation_id: conversation_id.clone(),
-        title: format!("Conversation {}", &conversation_id[0..8]),
-        created_at: timestamp,
-        updated_at: timestamp,
-        parent_interface_id,
-        anthropic_proxy_id,
-        system_prompt,
-        messages: Vec::new(),
-        settings: ConversationSettings {
-            model: "claude-3-7-sonnet-20250219".to_string(),
-            temperature: 0.7,
-            max_tokens: 4096,
-            top_p: None,
-            additional_params: None,
-        },
-    }
-}
-
-/// Add a user message to the conversation
-pub fn add_user_message(
-    state: &mut ChatState,
-    content: String,
-    timestamp: u64,
-) -> String {
-    let message_id = generate_message_id(&state.conversation_id, state.messages.len());
-    
-    let message = ChatMessage {
-        id: message_id.clone(),
-        role: "user".to_string(),
-        content,
-        timestamp,
-        metadata: None,
-    };
-    
-    state.messages.push(message);
-    state.updated_at = timestamp;
-    
-    message_id
-}
-
-/// Add an assistant message to the conversation
-pub fn add_assistant_message(
-    state: &mut ChatState,
-    content: String,
-    response_time_ms: u64,
-    timestamp: u64,
-) -> String {
-    let message_id = generate_message_id(&state.conversation_id, state.messages.len());
-    
-    let message = ChatMessage {
-        id: message_id.clone(),
-        role: "assistant".to_string(),
-        content,
-        timestamp,
-        metadata: Some(MessageMetadata {
-            token_count: None, // We could estimate this
-            response_time_ms: Some(response_time_ms),
-            additional: None,
-        }),
-    };
-    
-    state.messages.push(message);
-    state.updated_at = timestamp;
-    
-    message_id
-}
-
-/// Update conversation settings
-pub fn update_settings(
-    state: &mut ChatState,
-    settings: ConversationSettings,
-    timestamp: u64,
-) {
-    state.settings = settings;
-    state.updated_at = timestamp;
-}
-
-/// Update conversation title
-pub fn update_title(
-    state: &mut ChatState, 
-    title: String,
-    timestamp: u64,
-) {
-    state.title = title;
-    state.updated_at = timestamp;
-}
-
-/// Update system prompt
-pub fn update_system_prompt(
-    state: &mut ChatState,
-    system_prompt: Option<String>,
-    timestamp: u64,
-) {
-    state.system_prompt = system_prompt;
-    state.updated_at = timestamp;
-}
-
-/// Get a subset of messages from the conversation
-pub fn get_messages(
-    state: &ChatState,
-    limit: Option<u32>,
-    before_timestamp: Option<u64>,
-) -> Vec<ChatMessage> {
-    let mut messages = state.messages.clone();
-    
-    // Apply before_timestamp filter if specified
-    if let Some(timestamp) = before_timestamp {
-        messages.retain(|msg| msg.timestamp < timestamp);
-    }
-    
-    // Apply limit if specified
-    if let Some(limit) = limit {
-        if messages.len() > limit as usize {
-            let start_idx = messages.len() - limit as usize;
-            messages = messages[start_idx..].to_vec();
+impl ChatState {
+    /// Initialize a new state with default values
+    pub fn new(
+        id: String,
+        conversation_id: String,
+        parent_interface_id: String,
+        anthropic_proxy_id: String,
+        system_prompt: Option<String>,
+        timestamp: u64,
+    ) -> Self {
+        ChatState {
+            id,
+            conversation_id: conversation_id.clone(),
+            title: format!("Conversation {}", &conversation_id[0..8]),
+            created_at: timestamp,
+            updated_at: timestamp,
+            parent_interface_id,
+            anthropic_proxy_id,
+            system_prompt,
+            messages: Vec::new(),
+            settings: ConversationSettings {
+                model: "claude-3-7-sonnet-20250219".to_string(),
+                temperature: 0.7,
+                max_tokens: 4096,
+                top_p: None,
+                additional_params: None,
+            },
         }
     }
-    
-    messages
+
+    /// Add a user message to the conversation
+    pub fn add_user_message(state: &mut ChatState, content: String, timestamp: u64) -> String {
+        let message_id = generate_message_id(&state.conversation_id, state.messages.len());
+
+        let message = ChatMessage {
+            id: message_id.clone(),
+            role: "user".to_string(),
+            content,
+            timestamp,
+            metadata: None,
+        };
+
+        state.messages.push(message);
+        state.updated_at = timestamp;
+
+        message_id
+    }
+
+    /// Add an assistant message to the conversation
+    pub fn add_assistant_message(
+        state: &mut ChatState,
+        content: String,
+        response_time_ms: u64,
+        timestamp: u64,
+    ) -> String {
+        let message_id = generate_message_id(&state.conversation_id, state.messages.len());
+
+        let message = ChatMessage {
+            id: message_id.clone(),
+            role: "assistant".to_string(),
+            content,
+            timestamp,
+            metadata: Some(MessageMetadata {
+                token_count: None, // We could estimate this
+                response_time_ms: Some(response_time_ms),
+                additional: None,
+            }),
+        };
+
+        state.messages.push(message);
+        state.updated_at = timestamp;
+
+        message_id
+    }
+
+    /// Update conversation settings
+    pub fn update_settings(state: &mut ChatState, settings: ConversationSettings, timestamp: u64) {
+        state.settings = settings;
+        state.updated_at = timestamp;
+    }
+
+    /// Update conversation title
+    pub fn update_title(state: &mut ChatState, title: String, timestamp: u64) {
+        state.title = title;
+        state.updated_at = timestamp;
+    }
+
+    /// Update system prompt
+    pub fn update_system_prompt(
+        state: &mut ChatState,
+        system_prompt: Option<String>,
+        timestamp: u64,
+    ) {
+        state.system_prompt = system_prompt;
+        state.updated_at = timestamp;
+    }
+
+    /// Get a subset of messages from the conversation
+    pub fn get_messages(
+        state: &ChatState,
+        limit: Option<u32>,
+        before_timestamp: Option<u64>,
+    ) -> Vec<ChatMessage> {
+        let mut messages = state.messages.clone();
+
+        // Apply before_timestamp filter if specified
+        if let Some(timestamp) = before_timestamp {
+            messages.retain(|msg| msg.timestamp < timestamp);
+        }
+
+        // Apply limit if specified
+        if let Some(limit) = limit {
+            if messages.len() > limit as usize {
+                let start_idx = messages.len() - limit as usize;
+                messages = messages[start_idx..].to_vec();
+            }
+        }
+
+        messages
+    }
 }
 
 /// Helper function to generate a unique message ID
