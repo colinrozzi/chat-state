@@ -1,7 +1,9 @@
 mod bindings;
+mod bindings;
 mod protocol;
 mod state;
 mod utils;
+mod anthropic_client;
 
 use crate::bindings::exports::ntwk::theater::actor::Guest;
 use crate::bindings::exports::ntwk::theater::message_server_client::Guest as MessageServerClient;
@@ -107,18 +109,67 @@ impl MessageServerClient for Component {
             "send_message" => {
                 if let Some(message_content) = request.message {
                     // Add user message to state
-                    let _message_id = chat_state.add_user_message(message_content, timestamp);
-
-                    // For now, simulate a response since we don't have direct anthropic-proxy access
-                    let response_time = 1500; // ms
-                    let assistant_message_id = chat_state.add_assistant_message(
-                        "This is a simulated response from the assistant since we don't have direct access to the anthropic-proxy. In a real implementation, we would send the messages to the anthropic-proxy actor and get a response from the Claude model.".to_string(),
-                        response_time,
-                        timestamp + 2, // Add 2 seconds for simulation
+                    let message_id = chat_state.add_user_message(message_content, timestamp);
+                    
+                    log("Sending message to anthropic-proxy for response");
+                    
+                    // Get the timestamp before sending the request
+                    let request_start = current_timestamp()?;
+                    
+                    // Get a prepared set of messages for Anthropic API
+                    let messages_for_anthropic = utils::prepare_messages_for_anthropic(&chat_state.messages);
+                    
+                    // Create request for anthropic-proxy
+                    let anthropic_request = protocol::create_anthropic_request(
+                        &chat_state.conversation_id,
+                        &messages_for_anthropic, 
+                        chat_state.system_prompt.clone(),
+                        &chat_state.settings,
                     );
-
-                    // Get the assistant message
-                    let assistant_message = chat_state
+                    
+                    // Serialize the request
+                    let request_bytes = to_vec(&anthropic_request)
+                        .map_err(|e| format!("Error serializing request to anthropic-proxy: {}", e))?;
+                    
+                    // Send the request to the anthropic-proxy
+                    let response_bytes = bindings::ntwk::theater::message_server::message_request(
+                        &chat_state.anthropic_proxy_id,
+                        "process_request".to_string(),
+                        request_bytes,
+                    )
+                    .map_err(|e| format!("Error communicating with anthropic-proxy: {}", e))?;
+                    
+                    // Get the timestamp after receiving the response
+                    let request_end = current_timestamp()?;
+                    let response_time = request_end - request_start;
+                    
+                    // Parse the response
+                    let anthropic_response: protocol::AnthropicResponse = from_slice(&response_bytes)
+                        .map_err(|e| format!("Error parsing anthropic-proxy response: {}", e))?;
+                    
+                    // Process the response
+                    match anthropic_response.status.as_str() {
+                        "success" => {
+                            if let Some(completion) = anthropic_response.completion {
+                                // Extract the content
+                                let content = completion.content;
+                                
+                                // Add the assistant's message to the state
+                                let assistant_message_id = chat_state.add_assistant_message(
+                                    content,
+                                    response_time,
+                                    request_end,
+                                );
+                                
+                                // Generate a title if this is the first exchange
+                                if chat_state.title.starts_with("Conversation ") && chat_state.messages.len() >= 4 {
+                                    // Use the first few messages to generate a title
+                                    let title = utils::generate_conversation_title(&chat_state)?;
+                                    chat_state.update_title(title, timestamp);
+                                }
+                                
+                                // Get the assistant message
+                                let assistant_message = chat_state
                         .messages
                         .iter()
                         .find(|m| m.id == assistant_message_id)
