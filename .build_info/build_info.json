@@ -1,0 +1,12 @@
+{
+  "last_build_time": {
+    "secs_since_epoch": 1746127166,
+    "nanos_since_epoch": 209255000
+  },
+  "build_status": "Success",
+  "component_hash": "460ca4e20be4aa75df82aaf7b1ab18ac",
+  "build_log": "/Users/colinrozzi/work/actor-registry/chat-state/./.build_info/build_20250501_151905.log",
+  "build_duration": 21,
+  "component_size": 262166,
+  "error_message": null
+}

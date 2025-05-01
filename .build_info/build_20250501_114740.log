@@ -1,0 +1,264 @@
+=== Build Log for chat-state ===
+Date: 20250501_114740
+Builder: nix
+Duration: 14 seconds
+
+=== STDOUT ===
+
+=== STDERR ===
+=== Error Summary ===
+this derivation will be built:
+  /nix/store/imbkzjanqcxrrxf01jzgqivrfjbvi31d-chat-state-0.1.0.drv
+building '/nix/store/imbkzjanqcxrrxf01jzgqivrfjbvi31d-chat-state-0.1.0.drv'...
+error: builder for '/nix/store/imbkzjanqcxrrxf01jzgqivrfjbvi31d-chat-state-0.1.0.drv' failed with exit code 101;
+       last 25 log lines:
+       > 135 |     pub(super) struct RngImp;
+       >     |                       ^^^^^^
+       > note: the item is gated here
+       >    --> /private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:134:5
+       >     |
+       > 134 |     #[cfg(all(feature = "rng-getrandom", not(feature = "rng-rand")))]
+       >     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       > note: found an item that was configured out
+       >    --> /private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:179:23
+       >     |
+       > 179 |     pub(super) struct RngImp;
+       >     |                       ^^^^^^
+       > note: the item is gated here
+       >    --> /private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:174:5
+       >     |
+       > 174 | /     #[cfg(all(
+       > 175 | |         feature = "js",
+       > 176 | |         not(feature = "rng-rand"),
+       > 177 | |         not(feature = "rng-getrandom")
+       > 178 | |     ))]
+       >     | |_______^
+       >
+       > For more information about this error, try `rustc --explain E0433`.
+       > error: could not compile `uuid` (lib) due to 4 previous errors
+       > warning: build failed, waiting for other jobs to finish...
+       For full logs, run 'nix-store -l /nix/store/imbkzjanqcxrrxf01jzgqivrfjbvi31d-chat-state-0.1.0.drv'.
+
+
+=== Full Build Logs ===
+Running phase: unpackPhase
+@nix { "action": "setPhase", "phase": "unpackPhase" }
+unpacking source archive /nix/store/rxan52awjgdrc9nk2rnnjkj1lsyywb5x-8xl7jnwcwz6dg853xzaij3m8yymids79-source
+source root is 8xl7jnwcwz6dg853xzaij3m8yymids79-source
+Running phase: patchPhase
+@nix { "action": "setPhase", "phase": "patchPhase" }
+Running phase: updateAutotoolsGnuConfigScriptsPhase
+@nix { "action": "setPhase", "phase": "updateAutotoolsGnuConfigScriptsPhase" }
+Running phase: configurePhase
+@nix { "action": "setPhase", "phase": "configurePhase" }
+no configure script, doing nothing
+Running phase: buildPhase
+@nix { "action": "setPhase", "phase": "buildPhase" }
+[1m[32m  Generating[39m[0m bindings for chat-state (src/bindings.rs)
+[1m[32m    Updating[0m crates.io index
+[1m[32m Downloading[0m crates ...
+[1m[32m  Downloaded[0m equivalent v1.0.2
+[1m[32m  Downloaded[0m itoa v1.0.15
+[1m[32m  Downloaded[0m wit-bindgen v0.17.0
+[1m[32m  Downloaded[0m heck v0.4.1
+[1m[32m  Downloaded[0m cfg-if v1.0.0
+[1m[32m  Downloaded[0m leb128 v0.2.5
+[1m[32m  Downloaded[0m unicode-xid v0.2.6
+[1m[32m  Downloaded[0m semver v1.0.26
+[1m[32m  Downloaded[0m wasm-metadata v0.10.20
+[1m[32m  Downloaded[0m wit-bindgen-core v0.17.0
+[1m[32m  Downloaded[0m bitflags v2.9.0
+[1m[32m  Downloaded[0m wit-bindgen-rt v0.39.0
+[1m[32m  Downloaded[0m quote v1.0.40
+[1m[32m  Downloaded[0m id-arena v2.2.1
+[1m[32m  Downloaded[0m anyhow v1.0.98
+[1m[32m  Downloaded[0m wit-bindgen-rust v0.17.0
+[1m[32m  Downloaded[0m ryu v1.0.20
+[1m[32m  Downloaded[0m log v0.4.27
+[1m[32m  Downloaded[0m unicode-ident v1.0.18
+[1m[32m  Downloaded[0m smallvec v1.15.0
+[1m[32m  Downloaded[0m wasm-encoder v0.41.2
+[1m[32m  Downloaded[0m proc-macro2 v1.0.95
+[1m[32m  Downloaded[0m uuid v1.16.0
+[1m[32m  Downloaded[0m serde_derive v1.0.219
+[1m[32m  Downloaded[0m getrandom v0.3.2
+[1m[32m  Downloaded[0m wit-parser v0.13.2
+[1m[32m  Downloaded[0m serde v1.0.219
+[1m[32m  Downloaded[0m unicode-segmentation v1.12.0
+[1m[32m  Downloaded[0m indexmap v2.9.0
+[1m[32m  Downloaded[0m memchr v2.7.4
+[1m[32m  Downloaded[0m wasmparser v0.121.2
+[1m[32m  Downloaded[0m serde_json v1.0.140
+[1m[32m  Downloaded[0m hashbrown v0.15.3
+[1m[32m  Downloaded[0m wit-component v0.20.3
+[1m[32m  Downloaded[0m syn v2.0.101
+[1m[32m  Downloaded[0m libc v0.2.172
+[1m[32m  Downloaded[0m wit-bindgen-rust-macro v0.17.0
+[1m[32m  Downloaded[0m spdx v0.10.8
+[1m[32m   Compiling[0m proc-macro2 v1.0.95
+[1m[32m   Compiling[0m unicode-ident v1.0.18
+[1m[32m   Compiling[0m serde v1.0.219
+[1m[32m   Compiling[0m serde_json v1.0.140
+[1m[32m   Compiling[0m semver v1.0.26
+[1m[32m   Compiling[0m hashbrown v0.15.3
+[1m[32m   Compiling[0m anyhow v1.0.98
+[1m[32m   Compiling[0m equivalent v1.0.2
+[1m[32m   Compiling[0m itoa v1.0.15
+[1m[32m   Compiling[0m ryu v1.0.20
+[1m[32m   Compiling[0m memchr v2.7.4
+[1m[32m   Compiling[0m leb128 v0.2.5
+[1m[32m   Compiling[0m smallvec v1.15.0
+[1m[32m   Compiling[0m bitflags v2.9.0
+[1m[32m   Compiling[0m spdx v0.10.8
+[1m[32m   Compiling[0m wasm-encoder v0.41.2
+[1m[32m   Compiling[0m id-arena v2.2.1
+[1m[32m   Compiling[0m unicode-xid v0.2.6
+[1m[32m   Compiling[0m log v0.4.27
+[1m[32m   Compiling[0m wit-bindgen-rust v0.17.0
+[1m[32m   Compiling[0m unicode-segmentation v1.12.0
+[1m[32m   Compiling[0m heck v0.4.1
+[1m[32m   Compiling[0m wit-bindgen-rust-macro v0.17.0
+[1m[32m   Compiling[0m wit-bindgen-rt v0.39.0
+[1m[32m   Compiling[0m quote v1.0.40
+[1m[32m   Compiling[0m syn v2.0.101
+[1m[32m   Compiling[0m indexmap v2.9.0
+[1m[32m   Compiling[0m serde_derive v1.0.219
+[1m[32m   Compiling[0m wasmparser v0.121.2
+[1m[32m   Compiling[0m wit-parser v0.13.2
+[1m[32m   Compiling[0m wasm-metadata v0.10.20
+[1m[32m   Compiling[0m wit-component v0.20.3
+[1m[32m   Compiling[0m uuid v1.16.0
+[0m[1m[38;5;9merror[0m[0m[1m: to use `uuid` on `wasm32-unknown-unknown`, specify a source of randomness using one of the `js`, `rng-getrandom`, or `rng-rand` features[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:112:5[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m112[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    compile_error!("to use `uuid` on `wasm32-unknown-unknown`, specify a source of randomness using one of the `js`, `rng-getrandom`, or `rng-rand` features[0m[0m[1m[38;5;12m...[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;9m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[0m[1m[38;5;9merror[E0433][0m[0m[1m: failed to resolve: could not find `RngImp` in `imp`[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:10:10[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m10[0m[0m  [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    imp::RngImp::u128()[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m          [0m[0m[1m[38;5;9m^^^^^^[0m[0m [0m[0m[1m[38;5;9mcould not find `RngImp` in `imp`[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;10mnote[0m[0m: found an item that was configured out[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:116:23[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m116[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    pub(super) struct RngImp;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                       [0m[0m[1m[38;5;10m^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: the item is gated behind the `rng-rand` feature[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:115:11[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m115[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    #[cfg(feature = "rng-rand")][0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m           [0m[0m[1m[38;5;10m^^^^^^^^^^^^^^^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: found an item that was configured out[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:135:23[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m135[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    pub(super) struct RngImp;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                       [0m[0m[1m[38;5;10m^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: the item is gated here[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:134:5[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m134[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    #[cfg(all(feature = "rng-getrandom", not(feature = "rng-rand")))][0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;10m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: found an item that was configured out[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:179:23[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m179[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    pub(super) struct RngImp;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                       [0m[0m[1m[38;5;10m^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: the item is gated here[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:174:5[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m174[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m/[0m[0m [0m[0m    #[cfg(all([0m
+[0m[1m[38;5;12m175[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m        feature = "js",[0m
+[0m[1m[38;5;12m176[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m        not(feature = "rng-rand"),[0m
+[0m[1m[38;5;12m177[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m        not(feature = "rng-getrandom")[0m
+[0m[1m[38;5;12m178[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m    ))][0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|_______^[0m
+
+[0m[1m[38;5;9merror[E0433][0m[0m[1m: failed to resolve: could not find `RngImp` in `imp`[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:14:10[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m14[0m[0m  [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    imp::RngImp::u64()[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m          [0m[0m[1m[38;5;9m^^^^^^[0m[0m [0m[0m[1m[38;5;9mcould not find `RngImp` in `imp`[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;10mnote[0m[0m: found an item that was configured out[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:116:23[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m116[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    pub(super) struct RngImp;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                       [0m[0m[1m[38;5;10m^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: the item is gated behind the `rng-rand` feature[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:115:11[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m115[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    #[cfg(feature = "rng-rand")][0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m           [0m[0m[1m[38;5;10m^^^^^^^^^^^^^^^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: found an item that was configured out[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:135:23[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m135[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    pub(super) struct RngImp;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                       [0m[0m[1m[38;5;10m^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: the item is gated here[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:134:5[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m134[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    #[cfg(all(feature = "rng-getrandom", not(feature = "rng-rand")))][0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;10m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: found an item that was configured out[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:179:23[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m179[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    pub(super) struct RngImp;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                       [0m[0m[1m[38;5;10m^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: the item is gated here[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:174:5[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m174[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m/[0m[0m [0m[0m    #[cfg(all([0m
+[0m[1m[38;5;12m175[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m        feature = "js",[0m
+[0m[1m[38;5;12m176[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m        not(feature = "rng-rand"),[0m
+[0m[1m[38;5;12m177[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m        not(feature = "rng-getrandom")[0m
+[0m[1m[38;5;12m178[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m    ))][0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|_______^[0m
+
+[0m[1m[38;5;9merror[E0433][0m[0m[1m: failed to resolve: could not find `RngImp` in `imp`[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:18:10[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m18[0m[0m  [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    imp::RngImp::u16()[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m          [0m[0m[1m[38;5;9m^^^^^^[0m[0m [0m[0m[1m[38;5;9mcould not find `RngImp` in `imp`[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;10mnote[0m[0m: found an item that was configured out[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:116:23[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m116[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    pub(super) struct RngImp;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                       [0m[0m[1m[38;5;10m^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: the item is gated behind the `rng-rand` feature[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:115:11[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m115[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    #[cfg(feature = "rng-rand")][0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m           [0m[0m[1m[38;5;10m^^^^^^^^^^^^^^^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: found an item that was configured out[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:135:23[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m135[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    pub(super) struct RngImp;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                       [0m[0m[1m[38;5;10m^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: the item is gated here[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:134:5[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m134[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    #[cfg(all(feature = "rng-getrandom", not(feature = "rng-rand")))][0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m     [0m[0m[1m[38;5;10m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: found an item that was configured out[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:179:23[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m179[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    pub(super) struct RngImp;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                       [0m[0m[1m[38;5;10m^^^^^^[0m
+[0m[1m[38;5;10mnote[0m[0m: the item is gated here[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0m/private/tmp/nix-build-chat-state-0.1.0.drv-0/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uuid-1.16.0/src/rng.rs:174:5[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m174[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m/[0m[0m [0m[0m    #[cfg(all([0m
+[0m[1m[38;5;12m175[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m        feature = "js",[0m
+[0m[1m[38;5;12m176[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m        not(feature = "rng-rand"),[0m
+[0m[1m[38;5;12m177[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m        not(feature = "rng-getrandom")[0m
+[0m[1m[38;5;12m178[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|[0m[0m [0m[0m    ))][0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;10m|_______^[0m
+
+[0m[1mFor more information about this error, try `rustc --explain E0433`.[0m
+[1m[31merror[0m[1m:[0m could not compile `uuid` (lib) due to 4 previous errors
+[1m[33mwarning[0m[1m:[0m build failed, waiting for other jobs to finish...
+
+=== Exit Status: exit status: 1 ===

@@ -1,0 +1,13 @@
+name = "chat-state"
+component_path = "/nix/store/aa7iwl7720svy1d63bprhj1ky02wxzrp-chat-state-0.1.0/lib/chat-state.wasm"
+short_description = "Actor that manages state and behavior of conversations in the Claude Chat system"
+
+[[handlers]]
+type = "runtime"
+
+[handlers.config]
+
+[[handlers]]
+type = "timing"
+
+[handlers.config]
