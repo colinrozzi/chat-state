@@ -3,6 +3,7 @@ package ntwk:theater;
 world chat-state {
     import runtime;
     import timing;
+    import supervisor;
 
     export message-server-client;
     export actor;

@@ -1,5 +1,5 @@
 name = "chat-state"
-component_path = "/nix/store/aa7iwl7720svy1d63bprhj1ky02wxzrp-chat-state-0.1.0/lib/chat-state.wasm"
+component_path = "/nix/store/c9fawcdvvydcmirda49bml9hh4qi52dr-chat-state-0.1.0/lib/chat-state.wasm"
 short_description = "Actor that manages state and behavior of conversations in the Claude Chat system"
 
 [[handlers]]
@@ -9,5 +9,12 @@ type = "runtime"
 
 [[handlers]]
 type = "timing"
+
+[handlers.config]
+max_sleep_duration = 3600000
+min_sleep_duration = 1
+
+[[handlers]]
+type = "supervisor"
 
 [handlers.config]

@@ -1,12 +1,12 @@
 {
   "last_build_time": {
-    "secs_since_epoch": 1746127166,
-    "nanos_since_epoch": 209255000
+    "secs_since_epoch": 1746130288,
+    "nanos_since_epoch": 301132000
   },
   "build_status": "Success",
-  "component_hash": "460ca4e20be4aa75df82aaf7b1ab18ac",
-  "build_log": "/Users/colinrozzi/work/actor-registry/chat-state/./.build_info/build_20250501_151905.log",
-  "build_duration": 21,
-  "component_size": 262166,
+  "component_hash": "cc44b034b452c5603bec34d14fc41d38",
+  "build_log": "/Users/colinrozzi/work/actor-registry/chat-state/./.build_info/build_20250501_161112.log",
+  "build_duration": 15,
+  "component_size": 246862,
   "error_message": null
 }
