@@ -1,12 +1,12 @@
 {
   "last_build_time": {
-    "secs_since_epoch": 1746131532,
-    "nanos_since_epoch": 605758000
+    "secs_since_epoch": 1746132056,
+    "nanos_since_epoch": 893916000
   },
-  "build_status": "Failed",
-  "component_hash": null,
-  "build_log": "/Users/colinrozzi/work/actor-registry/chat-state/.build_info/build_20250501_163159.log",
-  "build_duration": 13,
-  "component_size": null,
-  "error_message": "error: builder for '/nix/store/zmb4f8p2gpxba0wqwa7mn48grvdpjxmv-chat-state-0.1.0.drv' failed with exit code 101;"
+  "build_status": "Success",
+  "component_hash": "f48eec554b08e5c8eb03cb59324d4806",
+  "build_log": "/Users/colinrozzi/work/actor-registry/chat-state/./.build_info/build_20250501_164042.log",
+  "build_duration": 14,
+  "component_size": 270463,
+  "error_message": null
 }

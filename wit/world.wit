@@ -4,6 +4,7 @@ world chat-state {
     import runtime;
     import timing;
     import supervisor;
+    import message-server-host;
 
     export message-server-client;
     export actor;
