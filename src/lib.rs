@@ -112,8 +112,12 @@ impl MessageServerClient for Component {
             }
             ChatStateRequest::GetSettings => {
                 let settings = chat_state.get_settings();
+                
+                // Convert internal settings to client-compatible format
+                let client_settings = protocol::internal_to_client_settings(settings);
+                
                 ChatStateResponse::Settings {
-                    settings: settings.clone(),
+                    settings: client_settings,
                 }
             }
             ChatStateRequest::UpdateSettings { settings } => {

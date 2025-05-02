@@ -67,3 +67,9 @@ pub fn create_error_response(code: &str, message: &str) -> ChatStateResponse {
         },
     }
 }
+
+/// Convert internal settings to client-compatible settings
+pub fn internal_to_client_settings(settings: &crate::state::ConversationSettings) -> crate::state::ConversationSettings {
+    // Just return the settings directly
+    settings.clone()
+}
