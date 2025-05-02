@@ -9,21 +9,19 @@ use crate::state::ConversationSettings;
 #[serde(tag = "type")]
 pub enum ChatStateRequest {
     #[serde(rename = "add_message")]
-    AddMessage(Message),
+    AddMessage { message: Message },
     #[serde(rename = "generate_completion")]
     GenerateCompletion,
+    #[serde(rename = "get_settings")]
+    GetSettings,
     #[serde(rename = "update_settings")]
-    UpdateSettings(ConversationSettings),
-    #[serde(rename = "update_system_prompt")]
-    UpdateSystemPrompt(Option<String>),
-    #[serde(rename = "update_title")]
-    UpdateTitle(String),
+    UpdateSettings { settings: ConversationSettings },
     #[serde(rename = "get_history")]
     GetHistory,
     #[serde(rename = "subscribe")]
-    Subscribe(String),
+    Subscribe { sub_id: String },
     #[serde(rename = "unsubscribe")]
-    Unsubscribe(String),
+    Unsubscribe { sub_id: String },
 }
 
 /// Data associated with the response
@@ -34,16 +32,16 @@ pub enum ChatStateResponse {
     Success,
 
     #[serde(rename = "message")]
-    Message(Message),
+    Message { message: Message },
 
     #[serde(rename = "history")]
-    History(Vec<Message>),
+    History { messages: Vec<Message> },
 
     #[serde(rename = "settings")]
-    Settings(ConversationSettings),
+    Settings { settings: ConversationSettings },
 
     #[serde(rename = "error")]
-    Error(ErrorInfo),
+    Error { error: ErrorInfo },
 }
 
 /// Error information
@@ -61,9 +59,11 @@ pub struct ErrorInfo {
 
 /// Create an error response
 pub fn create_error_response(code: &str, message: &str) -> ChatStateResponse {
-    ChatStateResponse::Error(ErrorInfo {
-        code: code.to_string(),
-        message: message.to_string(),
-        details: None,
-    })
+    ChatStateResponse::Error {
+        error: ErrorInfo {
+            code: code.to_string(),
+            message: message.to_string(),
+            details: None,
+        },
+    }
 }

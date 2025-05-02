@@ -94,41 +94,45 @@ impl MessageServerClient for Component {
 
         // Process request based on action
         let response = match request {
-            ChatStateRequest::AddMessage(message) => {
+            ChatStateRequest::AddMessage { message } => {
                 chat_state.add_message(message.clone());
                 ChatStateResponse::Success
             }
             ChatStateRequest::GenerateCompletion => {
                 let response = chat_state.generate_completion();
                 match response {
-                    Ok(completion) => ChatStateResponse::Message(completion),
+                    Ok(completion) => ChatStateResponse::Message {
+                        message: completion,
+                    },
                     Err(e) => {
                         log(&format!("Error generating completion: {}", e));
                         create_error_response("completion_error", &e)
                     }
                 }
             }
-            ChatStateRequest::UpdateSettings(settings) => {
+            ChatStateRequest::GetSettings => {
+                let settings = chat_state.get_settings();
+                ChatStateResponse::Settings {
+                    settings: settings.clone(),
+                }
+            }
+            ChatStateRequest::UpdateSettings { settings } => {
+                log("Updating settings");
+                log(&format!("Settings: {:?}", settings));
                 chat_state.update_settings(settings.clone());
                 ChatStateResponse::Success
             }
-            ChatStateRequest::UpdateSystemPrompt(system_prompt) => {
-                chat_state.update_system_prompt(system_prompt);
+            ChatStateRequest::Subscribe { sub_id } => {
+                chat_state.subscribe(sub_id);
                 ChatStateResponse::Success
             }
-            ChatStateRequest::UpdateTitle(title) => {
-                chat_state.update_title(title);
+            ChatStateRequest::Unsubscribe { sub_id } => {
+                chat_state.unsubscribe(sub_id);
                 ChatStateResponse::Success
             }
-            ChatStateRequest::Subscribe(channel_id) => {
-                chat_state.subscribe(channel_id);
-                ChatStateResponse::Success
-            }
-            ChatStateRequest::Unsubscribe(channel_id) => {
-                chat_state.unsubscribe(channel_id);
-                ChatStateResponse::Success
-            }
-            ChatStateRequest::GetHistory => ChatStateResponse::History(chat_state.messages.clone()),
+            ChatStateRequest::GetHistory => ChatStateResponse::History {
+                messages: chat_state.messages.clone(),
+            },
         };
 
         // Serialize updated state

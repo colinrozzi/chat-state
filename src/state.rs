@@ -14,13 +14,11 @@ pub struct ChatState {
 
     /// Basic information
     pub conversation_id: String,
-    pub title: String,
 
     /// Actor references
     pub anthropic_proxy_id: String,
 
     /// Conversation content
-    pub system_prompt: Option<String>,
     pub messages: Vec<Message>,
 
     /// Conversation settings
@@ -44,6 +42,12 @@ pub struct ConversationSettings {
 
     /// Any additional model parameters
     pub additional_params: Option<HashMap<String, serde_json::Value>>,
+
+    /// System prompt to use
+    pub system_prompt: Option<String>,
+
+    /// Title of the conversation
+    pub title: String,
 }
 
 impl ChatState {
@@ -52,15 +56,15 @@ impl ChatState {
         ChatState {
             id,
             conversation_id: conversation_id.clone(),
-            title: format!("Conversation {}", &conversation_id[0..8]),
             anthropic_proxy_id,
-            system_prompt: None,
             messages: Vec::new(),
             settings: ConversationSettings {
                 model: "claude-3-7-sonnet-20250219".to_string(),
                 temperature: None,
                 max_tokens: 8192,
                 additional_params: None,
+                system_prompt: None,
+                title: format!("Conversation {}", &conversation_id[0..8]),
             },
             subscriptions: Vec::new(),
         }
@@ -102,7 +106,7 @@ impl ChatState {
                 temperature: self.settings.temperature,
                 max_tokens: self.settings.max_tokens,
                 disable_parallel_tool_use: None,
-                system: self.system_prompt.clone(),
+                system: self.settings.system_prompt.clone(),
                 tools: None,
                 tool_choice: None,
             }),
@@ -145,19 +149,14 @@ impl ChatState {
         }
     }
 
+    /// Get conversation settings
+    pub fn get_settings(&self) -> &ConversationSettings {
+        &self.settings
+    }
+
     /// Update conversation settings
     pub fn update_settings(&mut self, settings: ConversationSettings) {
         self.settings = settings;
-    }
-
-    /// Update conversation title
-    pub fn update_title(&mut self, title: String) {
-        self.title = title;
-    }
-
-    /// Update system prompt
-    pub fn update_system_prompt(&mut self, system_prompt: Option<String>) {
-        self.system_prompt = system_prompt;
     }
 
     /// Subscribe to updates
