@@ -23,7 +23,7 @@ impl Guest for Component {
         log("Initializing chat-state actor");
         let (param,) = params;
 
-        let state = match init_state {
+        let mut state = match init_state {
             Some(state) => {
                 let parsed_init_state: InitData = from_slice(&state)
                     .map_err(|e| format!("Error deserializing init state: {}", e))?;
@@ -43,6 +43,9 @@ impl Guest for Component {
                 return Err("Chat state actor is not initialized".to_string());
             }
         };
+
+        // Start MCP servers
+        state.start_mcp_servers();
 
         // Serialize the state to bytes
         let state_bytes = to_vec(&state).map_err(|e| format!("Error serializing state: {}", e))?;
@@ -112,10 +115,10 @@ impl MessageServerClient for Component {
             }
             ChatStateRequest::GetSettings => {
                 let settings = chat_state.get_settings();
-                
+
                 // Convert internal settings to client-compatible format
                 let client_settings = protocol::internal_to_client_settings(settings);
-                
+
                 ChatStateResponse::Settings {
                     settings: client_settings,
                 }

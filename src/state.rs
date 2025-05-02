@@ -1,5 +1,6 @@
 use crate::bindings::ntwk::theater::message_server_host;
 use crate::bindings::ntwk::theater::runtime::log;
+use crate::bindings::ntwk::theater::supervisor::spawn;
 use anthropic_types::{
     AnthropicRequest, AnthropicResponse, CompletionRequest, Message, OperationType,
 };
@@ -48,6 +49,46 @@ pub struct ConversationSettings {
 
     /// Title of the conversation
     pub title: String,
+
+    /// Mcp servers
+    pub mcp_servers: Vec<McpServer>,
+}
+
+impl Default for ConversationSettings {
+    fn default() -> Self {
+        ConversationSettings {
+            model: "claude-3-7-sonnet-20250219".to_string(),
+            temperature: None,
+            max_tokens: 8192,
+            additional_params: None,
+            system_prompt: None,
+            title: "title".to_string(),
+            mcp_servers: vec![McpServer {
+                config: McpConfig {
+                command:
+                    "/Users/colinrozzi/work/mcp-servers/fs-mcp-server/target/release/fs-mcp-server"
+                        .to_string(),
+                args: vec![
+                    "--allowed-dirs".to_string(),
+                    "/Users/colinrozzi/work/tmp".to_string(),
+                ],
+            },
+                actor_id: None,
+            }],
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct McpConfig {
+    command: String,
+    args: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct McpServer {
+    pub actor_id: Option<String>,
+    pub config: McpConfig,
 }
 
 impl ChatState {
@@ -58,15 +99,40 @@ impl ChatState {
             conversation_id: conversation_id.clone(),
             anthropic_proxy_id,
             messages: Vec::new(),
-            settings: ConversationSettings {
-                model: "claude-3-7-sonnet-20250219".to_string(),
-                temperature: None,
-                max_tokens: 8192,
-                additional_params: None,
-                system_prompt: None,
-                title: format!("Conversation {}", &conversation_id[0..8]),
-            },
+            settings: ConversationSettings::default(),
             subscriptions: Vec::new(),
+        }
+    }
+
+    pub fn start_mcp_servers(&mut self) {
+        for mcp in &mut self.settings.mcp_servers {
+            if mcp.actor_id.is_some() {
+                log(&format!(
+                    "MCP server already started with actor ID: {}",
+                    mcp.actor_id.as_ref().unwrap()
+                ));
+                continue;
+            }
+
+            log(&format!(
+                "Starting MCP server: {} with args: {:?}",
+                mcp.config.command, mcp.config.args
+            ));
+
+            let actor_id = spawn(
+                "/Users/colinrozzi/work/actors/mcp-poc/manifest.toml",
+                Some(&serde_json::to_vec(&mcp.config).unwrap()),
+            );
+
+            match actor_id {
+                Ok(id) => {
+                    log(&format!("MCP server started with actor ID: {}", id));
+                    mcp.actor_id = Some(id);
+                }
+                Err(e) => {
+                    log(&format!("Error starting MCP server: {}", e));
+                }
+            }
         }
     }
 
@@ -157,6 +223,10 @@ impl ChatState {
     /// Update conversation settings
     pub fn update_settings(&mut self, settings: ConversationSettings) {
         self.settings = settings;
+
+        log(&format!("Updated settings: {:?}", self.settings));
+
+        self.start_mcp_servers();
     }
 
     /// Subscribe to updates
