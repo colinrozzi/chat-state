@@ -40,7 +40,7 @@ pub struct ConversationSettings {
     pub temperature: Option<f32>,
 
     /// Maximum tokens to generate
-    pub max_tokens: Option<u32>,
+    pub max_tokens: u32,
 
     /// Any additional model parameters
     pub additional_params: Option<HashMap<String, serde_json::Value>>,
@@ -59,7 +59,7 @@ impl ChatState {
             settings: ConversationSettings {
                 model: "claude-3-7-sonnet-20250219".to_string(),
                 temperature: None,
-                max_tokens: None,
+                max_tokens: 8192,
                 additional_params: None,
             },
             subscriptions: Vec::new(),
@@ -101,8 +101,6 @@ impl ChatState {
                 messages: self.messages.clone(),
                 temperature: self.settings.temperature,
                 max_tokens: self.settings.max_tokens,
-                additional_params: self.settings.additional_params.clone(),
-                anthropic_version: Some("v1".to_string()),
                 disable_parallel_tool_use: None,
                 system: self.system_prompt.clone(),
                 tools: None,
