@@ -1,6 +1,7 @@
 use crate::bindings::ntwk::theater::message_server_host;
 use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::supervisor::spawn;
+use crate::protocol::McpActorRequest;
 use anthropic_types::{
     AnthropicRequest, AnthropicResponse, CompletionRequest, Message, OperationType,
 };
@@ -127,7 +128,21 @@ impl ChatState {
             match actor_id {
                 Ok(id) => {
                     log(&format!("MCP server started with actor ID: {}", id));
-                    mcp.actor_id = Some(id);
+                    mcp.actor_id = Some(id.clone());
+
+                    // Send the actor a list tools request
+                    let tool_list_request = McpActorRequest::ToolsList {};
+                    let request_bytes =
+                        to_vec(&tool_list_request).expect("Error serializing tool list request");
+                    log(&format!("Sending tool list request to MCP server: {}", id));
+                    let response_bytes = message_server_host::request(&id, &request_bytes)
+                        .expect("Error sending tool list request to MCP server");
+
+                    log("Received tool list response from MCP server");
+                    log(&format!(
+                        "Tool list response bytes: {:?}",
+                        String::from_utf8_lossy(&response_bytes)
+                    ));
                 }
                 Err(e) => {
                     log(&format!("Error starting MCP server: {}", e));

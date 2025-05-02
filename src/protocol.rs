@@ -1,8 +1,17 @@
 use anthropic_types::Message;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::state::ConversationSettings;
+
+// Actor API request structures
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "type")]
+pub enum McpActorRequest {
+    ToolsList {},
+    ToolsCall { name: String, args: Value },
+}
 
 /// Messages received by the chat-state actor
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -69,7 +78,9 @@ pub fn create_error_response(code: &str, message: &str) -> ChatStateResponse {
 }
 
 /// Convert internal settings to client-compatible settings
-pub fn internal_to_client_settings(settings: &crate::state::ConversationSettings) -> crate::state::ConversationSettings {
+pub fn internal_to_client_settings(
+    settings: &crate::state::ConversationSettings,
+) -> crate::state::ConversationSettings {
     // Just return the settings directly
     settings.clone()
 }
