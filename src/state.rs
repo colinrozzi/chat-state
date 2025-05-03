@@ -6,7 +6,7 @@ use anthropic_types::{
     messages::StopReason, AnthropicRequest, AnthropicResponse, CompletionRequest,
     CompletionResponse, Message, MessageContent,
 };
-use mcp_protocol::tool::Tool;
+use mcp_protocol::tool::{Tool, ToolCallResult};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_vec, Value};
 use std::collections::HashMap;
@@ -68,9 +68,7 @@ impl Default for ConversationSettings {
             title: "title".to_string(),
             mcp_servers: vec![McpServer {
                 config: McpConfig {
-                    command:
-                        "/Users/colinrozzi/work/mcp-servers/fs-mcp-server/target/release/fs-mcp-server"
-                            .to_string(),
+                    command: "/Users/colinrozzi/work/mcp-servers/bin/fs-mcp-server".to_string(),
                     args: vec![
                         "--allowed-dirs".to_string(),
                         "/Users/colinrozzi/work/tmp".to_string(),
@@ -316,9 +314,13 @@ impl ChatState {
                         None
                     };
 
+                    let tool_result =
+                        serde_json::from_value::<ToolCallResult>(result.result.clone().unwrap())
+                            .expect("Error parsing tool call result");
+
                     let tool_use_result = MessageContent::ToolResult {
                         tool_use_id: id,
-                        content: result.result.clone().unwrap_or_default(),
+                        content: tool_result.content,
                         is_error: err,
                     };
 

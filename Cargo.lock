@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "anthropic-types"
-version = "0.1.37"
+version = "0.1.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89a62d9ea05e9da0c73b22a8be6accae7296704f4286e4f4a114946393a2d823"
+checksum = "8a8e16cdfa8038066c946a4b25d8360cfcede506b3804a6d85c3dc181b6f2499"
 dependencies = [
  "mcp-protocol",
  "serde",
