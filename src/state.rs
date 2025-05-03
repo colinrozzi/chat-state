@@ -1,12 +1,14 @@
 use crate::bindings::ntwk::theater::message_server_host;
 use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::supervisor::spawn;
-use crate::protocol::McpActorRequest;
+use crate::protocol::{McpActorRequest, McpResponse};
 use anthropic_types::{
-    AnthropicRequest, AnthropicResponse, CompletionRequest, Message, OperationType,
+    messages::StopReason, AnthropicRequest, AnthropicResponse, CompletionRequest,
+    CompletionResponse, Message, MessageContent,
 };
+use mcp_protocol::tool::Tool;
 use serde::{Deserialize, Serialize};
-use serde_json::to_vec;
+use serde_json::{to_vec, Value};
 use std::collections::HashMap;
 
 /// Main state structure for the chat-state actor
@@ -66,15 +68,16 @@ impl Default for ConversationSettings {
             title: "title".to_string(),
             mcp_servers: vec![McpServer {
                 config: McpConfig {
-                command:
-                    "/Users/colinrozzi/work/mcp-servers/fs-mcp-server/target/release/fs-mcp-server"
-                        .to_string(),
-                args: vec![
-                    "--allowed-dirs".to_string(),
-                    "/Users/colinrozzi/work/tmp".to_string(),
-                ],
-            },
+                    command:
+                        "/Users/colinrozzi/work/mcp-servers/fs-mcp-server/target/release/fs-mcp-server"
+                            .to_string(),
+                    args: vec![
+                        "--allowed-dirs".to_string(),
+                        "/Users/colinrozzi/work/tmp".to_string(),
+                    ],
+                },
                 actor_id: None,
+                tools: None,
             }],
         }
     }
@@ -90,6 +93,44 @@ pub struct McpConfig {
 pub struct McpServer {
     pub actor_id: Option<String>,
     pub config: McpConfig,
+    pub tools: Option<Vec<Tool>>,
+}
+
+impl McpServer {
+    pub fn call_tool(&self, tool: String, args: Value) -> Result<McpResponse, String> {
+        log(&format!("Calling tool: {} with args: {:?}", tool, args));
+        // Check if the MCP server is started
+        if self.actor_id.is_none() {
+            return Err("MCP server not started".to_string());
+        }
+
+        // Check if the tool is available
+        if self.tools.is_none() {
+            return Err("No tools available".to_string());
+        }
+
+        // Check if the tool is valid
+        if !self.tools.as_ref().unwrap().iter().any(|t| t.name == tool) {
+            return Err(format!("Tool {} not found", tool));
+        }
+
+        // Call the tool with the given arguments
+        let result = message_server_host::request(
+            self.actor_id.as_ref().unwrap(),
+            &to_vec(&McpActorRequest::ToolsCall { name: tool, args })
+                .expect("Error serializing tool use request"),
+        )
+        .map_err(|e| format!("Error calling tool: {}", e))?;
+
+        serde_json::from_slice(&result).map_err(|e| format!("Error parsing tool response: {}", e))
+    }
+
+    pub fn has_tool(&self, tool: &str) -> bool {
+        self.tools
+            .as_ref()
+            .map(|tools| tools.iter().any(|t| t.name == tool))
+            .unwrap_or(false)
+    }
 }
 
 impl ChatState {
@@ -105,7 +146,7 @@ impl ChatState {
         }
     }
 
-    pub fn start_mcp_servers(&mut self) {
+    pub fn start_mcp_servers(&mut self) -> Result<(), String> {
         for mcp in &mut self.settings.mcp_servers {
             if mcp.actor_id.is_some() {
                 log(&format!(
@@ -138,63 +179,192 @@ impl ChatState {
                     let response_bytes = message_server_host::request(&id, &request_bytes)
                         .expect("Error sending tool list request to MCP server");
 
-                    log("Received tool list response from MCP server");
-                    log(&format!(
-                        "Tool list response bytes: {:?}",
-                        String::from_utf8_lossy(&response_bytes)
-                    ));
+                    let response: McpResponse = serde_json::from_slice(&response_bytes)
+                        .expect("Error parsing tool list response");
+
+                    if let Some(result) = response.result {
+                        log(&format!("Tool list response: {:?}", result));
+                        let tools = serde_json::from_value::<Vec<Tool>>(
+                            result.get("tools").unwrap().clone(),
+                        )
+                        .expect("Error parsing tool list response");
+
+                        log(&format!("Parsed tools: {:?}", tools));
+
+                        mcp.tools = Some(tools);
+                    } else if let Some(error) = response.error {
+                        log(&format!("Error in tool list response: {:?}", error));
+                        return Err(format!("Error in tool list response: {}", error.message));
+                    } else {
+                        log("No result or error in tool list response");
+                        return Err("No result or error in tool list response".to_string());
+                    }
                 }
                 Err(e) => {
                     log(&format!("Error starting MCP server: {}", e));
+                    return Err(format!("Error starting MCP server: {}", e));
                 }
             }
         }
+
+        Ok(())
     }
 
-    pub fn generate_completion(&mut self) -> Result<Message, String> {
+    pub fn generate_completion(&mut self) -> Result<Vec<Message>, String> {
         log("Getting completion from anthropic-proxy");
 
-        let anthropic_response = self.send_to_anthropic_proxy();
+        if self.messages.is_empty() {
+            return Err("No messages in conversation".to_string());
+        }
 
-        match anthropic_response {
-            Ok(response) => {
-                let msg = Message {
-                    role: "assistant".to_string(),
-                    content: response.completion.expect("No completion found").content,
-                };
+        let mut new_messages = Vec::new();
 
-                log("Received response from anthropic-proxy");
+        loop {
+            // Generate a completion
+            let anthropic_response = self
+                .send_to_anthropic_proxy()
+                .expect("Error getting completion");
 
-                self.add_message(msg.clone());
-                Ok(msg)
+            let msg = Message {
+                role: "assistant".to_string(),
+                content: anthropic_response.content.clone(),
+            };
+
+            self.add_message(msg.clone());
+            new_messages.push(msg);
+
+            match anthropic_response.stop_reason {
+                StopReason::EndTurn => {
+                    log("Received end turn signal from anthropic-proxy");
+                    break;
+                }
+                StopReason::MaxTokens => {
+                    log("Received max tokens signal from anthropic-proxy");
+                    break;
+                }
+                StopReason::StopSequence => {
+                    log("Received stop sequence signal from anthropic-proxy");
+                    break;
+                }
+                StopReason::ToolUse => {
+                    log("Received tool use signal from anthropic-proxy");
+
+                    let tool_responses = self
+                        .process_tools(anthropic_response)
+                        .expect("Error calling tool");
+
+                    let tool_msg = Message {
+                        role: "user".to_string(),
+                        content: tool_responses.clone(),
+                    };
+
+                    self.add_message(tool_msg.clone());
+                }
             }
-            Err(e) => {
-                log(&format!("Error getting completion: {}", e));
-                Err(format!("Error getting completion: {}", e))
+        }
+
+        log("Generated completion successfully");
+        Ok(new_messages)
+    }
+
+    pub fn get_tools(&self) -> Result<Option<Vec<Tool>>, String> {
+        log("Getting tools from MCP servers");
+
+        let mut tools = Vec::new();
+
+        for mcp in &self.settings.mcp_servers {
+            if let Some(ref actor_id) = mcp.actor_id {
+                if let Some(ref mcp_tools) = mcp.tools {
+                    tools.extend(mcp_tools.clone());
+                } else {
+                    log(&format!("No tools found for MCP server: {}", actor_id));
+                }
+            } else {
+                log("MCP server not started");
             }
+        }
+
+        if tools.is_empty() {
+            log("No tools found");
+            return Ok(None);
+        } else {
+            log(&format!("Found tools: {:?}", tools));
+            return Ok(Some(tools));
         }
     }
 
+    /// Call a tool with the given completion
+    pub fn process_tools(
+        &self,
+        completion: CompletionResponse,
+    ) -> Result<Vec<MessageContent>, String> {
+        log("Processing tools");
+
+        let mut tool_results = Vec::new();
+
+        for message_content in completion.content {
+            match message_content {
+                MessageContent::ToolUse { id, name, input } => {
+                    log(&format!("Calling tool: {} with args: {:?}", name, input));
+
+                    // Call the tool with the given arguments
+                    let result = self.call_tool(name, input)?;
+
+                    let err = if result.error.is_some() {
+                        Some(true)
+                    } else {
+                        None
+                    };
+
+                    let tool_use_result = MessageContent::ToolResult {
+                        tool_use_id: id,
+                        content: result.result.clone().unwrap_or_default(),
+                        is_error: err,
+                    };
+
+                    log(&format!("Tool result: {:?}", result));
+
+                    tool_results.push(tool_use_result);
+                }
+                _ => {
+                    log("No tool use message found");
+                }
+            }
+        }
+
+        Ok(tool_results)
+    }
+
+    /// Call a tool with the given name and arguments
+    pub fn call_tool(&self, name: String, args: Value) -> Result<McpResponse, String> {
+        log(&format!("Calling tool: {} with args: {:?}", name, args));
+
+        // Check if the tool is available
+        for mcp in &self.settings.mcp_servers {
+            if mcp.has_tool(&name) {
+                return mcp.call_tool(name, args);
+            }
+        }
+
+        Err(format!("Tool {} not found", name))
+    }
+
     /// Sends a request to the anthropic-proxy actor and returns the response
-    pub fn send_to_anthropic_proxy(&self) -> Result<AnthropicResponse, String> {
+    pub fn send_to_anthropic_proxy(&self) -> Result<CompletionResponse, String> {
         log("Sending request to anthropic-proxy");
 
         // Create the Anthropic request
-        let request = AnthropicRequest {
-            completion_request: Some(CompletionRequest {
+        let request = AnthropicRequest::GenerateCompletion {
+            request: CompletionRequest {
                 model: self.settings.model.clone(),
                 messages: self.messages.clone(),
                 temperature: self.settings.temperature,
                 max_tokens: self.settings.max_tokens,
                 disable_parallel_tool_use: None,
                 system: self.settings.system_prompt.clone(),
-                tools: None,
+                tools: self.get_tools().expect("Error getting tools"),
                 tool_choice: None,
-            }),
-            operation_type: OperationType::ChatCompletion,
-            params: None,
-            version: "v1".to_string(),
-            request_id: "unimplemented".to_string(),
+            },
         };
 
         // Serialize the request
@@ -213,7 +383,13 @@ impl ChatState {
         let response: AnthropicResponse = serde_json::from_slice(&response_bytes)
             .map_err(|e| format!("Error parsing Anthropic response: {}", e))?;
 
-        Ok(response)
+        match response {
+            AnthropicResponse::Completion { completion } => {
+                log("Received completion from anthropic-proxy");
+                Ok(completion)
+            }
+            _ => Err("Unexpected response from anthropic-proxy".to_string()),
+        }
     }
 
     pub fn add_message(&mut self, message: Message) {
@@ -241,7 +417,8 @@ impl ChatState {
 
         log(&format!("Updated settings: {:?}", self.settings));
 
-        self.start_mcp_servers();
+        self.start_mcp_servers()
+            .expect("Error starting MCP servers");
     }
 
     /// Subscribe to updates

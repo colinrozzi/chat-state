@@ -4,10 +4,11 @@ version = 4
 
 [[package]]
 name = "anthropic-types"
-version = "0.1.32"
+version = "0.1.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbc5bd759b3f04b191af1d08de8e1e2a4aeebd38d3b8771d6d88755c8a6807fb"
+checksum = "89a62d9ea05e9da0c73b22a8be6accae7296704f4286e4f4a114946393a2d823"
 dependencies = [
+ "mcp-protocol",
  "serde",
  "serde_json",
 ]
@@ -41,6 +42,7 @@ name = "chat-state"
 version = "0.1.0"
 dependencies = [
  "anthropic-types",
+ "mcp-protocol",
  "serde",
  "serde_json",
  "uuid",
@@ -131,6 +133,16 @@ name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
+
+[[package]]
+name = "mcp-protocol"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8b4007de6cab753dbfb291e5cfcf3f0f5bfecda65268ba9d28deeaf8051880e"
+dependencies = [
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "memchr"

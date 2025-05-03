@@ -45,7 +45,9 @@ impl Guest for Component {
         };
 
         // Start MCP servers
-        state.start_mcp_servers();
+        state
+            .start_mcp_servers()
+            .expect("Failed to start MCP servers");
 
         // Serialize the state to bytes
         let state_bytes = to_vec(&state).map_err(|e| format!("Error serializing state: {}", e))?;
@@ -104,8 +106,8 @@ impl MessageServerClient for Component {
             ChatStateRequest::GenerateCompletion => {
                 let response = chat_state.generate_completion();
                 match response {
-                    Ok(completion) => ChatStateResponse::Message {
-                        message: completion,
+                    Ok(completion) => ChatStateResponse::Completion {
+                        messages: completion,
                     },
                     Err(e) => {
                         log(&format!("Error generating completion: {}", e));
