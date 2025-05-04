@@ -2,9 +2,9 @@ use crate::bindings::ntwk::theater::message_server_host;
 use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::supervisor::spawn;
 use crate::protocol::{McpActorRequest, McpResponse};
-use anthropic_types::{
-    messages::StopReason, AnthropicRequest, AnthropicResponse, CompletionRequest,
-    CompletionResponse, Message, MessageContent,
+use genai_types::{
+    messages::StopReason, CompletionRequest, CompletionResponse, Message, MessageContent,
+    ProxyRequest, ProxyResponse,
 };
 use mcp_protocol::tool::{Tool, ToolCallResult};
 use serde::{Deserialize, Serialize};
@@ -356,7 +356,7 @@ impl ChatState {
         log("Sending request to anthropic-proxy");
 
         // Create the Anthropic request
-        let request = AnthropicRequest::GenerateCompletion {
+        let request = ProxyRequest::GenerateCompletion {
             request: CompletionRequest {
                 model: self.settings.model.clone(),
                 messages: self.messages.clone(),
@@ -382,11 +382,11 @@ impl ChatState {
             .map_err(|e| format!("Error sending request to anthropic-proxy: {}", e))?;
 
         // Parse the response
-        let response: AnthropicResponse = serde_json::from_slice(&response_bytes)
+        let response: ProxyResponse = serde_json::from_slice(&response_bytes)
             .map_err(|e| format!("Error parsing Anthropic response: {}", e))?;
 
         match response {
-            AnthropicResponse::Completion { completion } => {
+            ProxyResponse::Completion { completion } => {
                 log("Received completion from anthropic-proxy");
                 Ok(completion)
             }
