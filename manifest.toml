@@ -1,5 +1,5 @@
 name = "chat-state"
-component_path = "/nix/store/4babc8pxx7glf24w3llp547xrpbsvfzm-chat-state-0.1.0/lib/chat-state.wasm"
+component_path = "/nix/store/lagfdf0y8p559ag8039g7js9l4xsgi2l-chat-state-0.1.0/lib/chat-state.wasm"
 short_description = "Actor that manages state and behavior of conversations in the Claude Chat system"
 
 [[handlers]]
