@@ -33,11 +33,17 @@ pub struct ChatState {
     pub subscriptions: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ModelConfig {
+    pub model: String,
+    pub provider: String,
+}
+
 /// Conversation settings
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConversationSettings {
     /// Model to use (e.g., "claude-3-7-sonnet-20250219")
-    pub model: String,
+    pub model_config: ModelConfig,
 
     /// Temperature setting (0.0 to 1.0)
     pub temperature: Option<f32>,
@@ -61,7 +67,10 @@ pub struct ConversationSettings {
 impl Default for ConversationSettings {
     fn default() -> Self {
         ConversationSettings {
-            model: "gemini-2.0-flash".to_string(),
+            model_config: ModelConfig {
+                model: "gemini-2.0-flash".to_string(),
+                provider: "google".to_string(),
+            },
             temperature: None,
             max_tokens: 8192,
             additional_params: None,
@@ -210,8 +219,6 @@ impl ChatState {
     }
 
     pub fn generate_completion(&mut self) -> Result<Vec<Message>, String> {
-        log("Getting completion from anthropic-proxy");
-
         if self.messages.is_empty() {
             return Err("No messages in conversation".to_string());
         }
@@ -220,19 +227,19 @@ impl ChatState {
 
         loop {
             // Generate a completion
-            let anthropic_response = self
-                .generate_proxy_completion(&self.settings.model)
+            let model_response = self
+                .generate_proxy_completion(&self.settings.model_config.provider)
                 .expect("Error getting completion");
 
             let msg = Message {
                 role: "assistant".to_string(),
-                content: anthropic_response.content.clone(),
+                content: model_response.content.clone(),
             };
 
             self.add_message(msg.clone());
             new_messages.push(msg);
 
-            match anthropic_response.stop_reason {
+            match model_response.stop_reason {
                 StopReason::EndTurn => {
                     log("Received end turn signal from anthropic-proxy");
                     break;
@@ -249,7 +256,7 @@ impl ChatState {
                     log("Received tool use signal from anthropic-proxy");
 
                     let tool_responses = self
-                        .process_tools(anthropic_response)
+                        .process_tools(model_response)
                         .expect("Error calling tool");
 
                     let tool_msg = Message {
@@ -423,7 +430,7 @@ impl ChatState {
         // Create the Anthropic request
         let request = ProxyRequest::GenerateCompletion {
             request: CompletionRequest {
-                model: self.settings.model.clone(),
+                model: self.settings.model_config.model.clone(),
                 messages: self.messages.clone(),
                 temperature: self.settings.temperature,
                 max_tokens: self.settings.max_tokens,
