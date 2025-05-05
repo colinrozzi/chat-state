@@ -66,7 +66,17 @@ impl Default for ConversationSettings {
             additional_params: None,
             system_prompt: None,
             title: "title".to_string(),
-            mcp_servers: vec![],
+            mcp_servers: vec![McpServer {
+                config: McpConfig {
+                    command: "/Users/colinrozzi/work/mcp-servers/bin/fs-mcp-server".to_string(),
+                    args: vec![
+                        "--allowed-dirs".to_string(),
+                        "/Users/colinrozzi/work/tmp".to_string(),
+                    ],
+                },
+                actor_id: None,
+                tools: None,
+            }],
         }
     }
 }
