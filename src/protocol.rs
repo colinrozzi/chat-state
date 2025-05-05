@@ -1,4 +1,5 @@
-use genai_types::Message;
+use genai_types::{Message, ModelInfo};
+use mcp_protocol::tool::Tool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -49,6 +50,10 @@ pub enum ChatStateRequest {
     Subscribe { sub_id: String },
     #[serde(rename = "unsubscribe")]
     Unsubscribe { sub_id: String },
+    #[serde(rename = "list_models")]
+    ListModels,
+    #[serde(rename = "list_tools")]
+    ListTools,
 }
 
 /// Data associated with the response
@@ -72,6 +77,12 @@ pub enum ChatStateResponse {
 
     #[serde(rename = "error")]
     Error { error: ErrorInfo },
+
+    #[serde(rename = "tools_list")]
+    ToolsList { tools: Vec<Tool> },
+
+    #[serde(rename = "models_list")]
+    ModelsList { models: Vec<ModelInfo> },
 }
 
 /// Error information

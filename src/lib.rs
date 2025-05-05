@@ -1,16 +1,18 @@
 mod bindings;
 mod protocol;
+mod proxy;
 mod state;
 
 use crate::bindings::exports::ntwk::theater::actor::Guest;
 use crate::bindings::exports::ntwk::theater::message_server_client::Guest as MessageServerClient;
 use crate::bindings::ntwk::theater::runtime::log;
-use crate::bindings::ntwk::theater::supervisor::spawn;
 use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse};
+use crate::proxy::Proxy;
 use crate::state::ChatState;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct InitData {
@@ -31,12 +33,22 @@ impl Guest for Component {
                     "Chat state actor initialized with conversation_id: {}",
                     parsed_init_state.conversation_id
                 ));
-                let anthropic_proxy_id = spawn(
-                    "/Users/colinrozzi/work/actor-registry/google-proxy/manifest.toml",
-                    None,
+
+                let mut proxies = HashMap::new();
+                let anthropic_proxy = Proxy::new(
+                    "anthropic",
+                    "/Users/colinrozzi/work/actor-registry/anthropic-proxy/manifest.toml",
                 )
                 .map_err(|e| format!("Error spawning anthropic-proxy: {}", e))?;
-                ChatState::new(param, parsed_init_state.conversation_id, anthropic_proxy_id)
+
+                let google_proxy = Proxy::new(
+                    "google",
+                    "/Users/colinrozzi/work/actor-registry/google-proxy/manifest.toml",
+                )
+                .map_err(|e| format!("Error spawning google-proxy: {}", e))?;
+                proxies.insert("anthropic".to_string(), anthropic_proxy);
+                proxies.insert("google".to_string(), google_proxy);
+                ChatState::new(param, parsed_init_state.conversation_id, proxies)
             }
             None => {
                 log("Chat state actor is not initialized");
@@ -141,6 +153,23 @@ impl MessageServerClient for Component {
             }
             ChatStateRequest::GetHistory => ChatStateResponse::History {
                 messages: chat_state.messages.clone(),
+            },
+            ChatStateRequest::ListModels => {
+                let models = chat_state.list_models();
+                match models {
+                    Ok(models) => ChatStateResponse::ModelsList { models },
+                    Err(e) => {
+                        log(&format!("Error listing models: {}", e));
+                        create_error_response("models_error", &e)
+                    }
+                }
+            }
+            ChatStateRequest::ListTools => match chat_state.list_tools() {
+                Ok(tools) => ChatStateResponse::ToolsList { tools },
+                Err(e) => {
+                    log(&format!("Error listing tools: {}", e));
+                    create_error_response("tools_error", &e)
+                }
             },
         };
 

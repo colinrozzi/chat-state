@@ -2,9 +2,10 @@ use crate::bindings::ntwk::theater::message_server_host;
 use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::supervisor::spawn;
 use crate::protocol::{McpActorRequest, McpResponse};
+use crate::proxy::Proxy;
 use genai_types::{
     messages::StopReason, CompletionRequest, CompletionResponse, Message, MessageContent,
-    ProxyRequest, ProxyResponse,
+    ModelInfo, ProxyRequest, ProxyResponse,
 };
 use mcp_protocol::tool::{Tool, ToolCallResult};
 use serde::{Deserialize, Serialize};
@@ -19,8 +20,8 @@ pub struct ChatState {
     /// Basic information
     pub conversation_id: String,
 
-    /// Actor references
-    pub anthropic_proxy_id: String,
+    /// Proxy actor references
+    pub proxies: HashMap<String, Proxy>,
 
     /// Conversation content
     pub messages: Vec<Message>,
@@ -133,11 +134,11 @@ impl McpServer {
 
 impl ChatState {
     /// Initialize a new state with default values
-    pub fn new(id: String, conversation_id: String, anthropic_proxy_id: String) -> Self {
+    pub fn new(id: String, conversation_id: String, proxies: HashMap<String, Proxy>) -> Self {
         ChatState {
             id,
             conversation_id: conversation_id.clone(),
-            anthropic_proxy_id,
+            proxies,
             messages: Vec::new(),
             settings: ConversationSettings::default(),
             subscriptions: Vec::new(),
@@ -220,7 +221,7 @@ impl ChatState {
         loop {
             // Generate a completion
             let anthropic_response = self
-                .send_to_anthropic_proxy()
+                .generate_proxy_completion(&self.settings.model)
                 .expect("Error getting completion");
 
             let msg = Message {
@@ -337,6 +338,67 @@ impl ChatState {
         Ok(tool_results)
     }
 
+    /// Get the list of tools from the MCP servers
+    pub fn list_tools(&self) -> Result<Vec<Tool>, String> {
+        log("Getting tool list from MCP servers");
+
+        let mut tools = Vec::new();
+
+        for mcp in &self.settings.mcp_servers {
+            if let Some(ref actor_id) = mcp.actor_id {
+                if let Some(ref mcp_tools) = mcp.tools {
+                    tools.extend(mcp_tools.clone());
+                } else {
+                    log(&format!("No tools found for MCP server: {}", actor_id));
+                }
+            } else {
+                log("MCP server not started");
+            }
+        }
+
+        if tools.is_empty() {
+            log("No tools found");
+            return Err("No tools found".to_string());
+        } else {
+            log(&format!("Found tools: {:?}", tools));
+            return Ok(tools);
+        }
+    }
+
+    /// Get the list of models from the proxies
+    pub fn list_models(&self) -> Result<Vec<ModelInfo>, String> {
+        log("Getting model list from proxies");
+
+        let mut models = Vec::new();
+
+        for proxy in self.proxies.values() {
+            let response = proxy.send_to_proxy(ProxyRequest::ListModels);
+
+            match response {
+                Ok(ProxyResponse::ListModels { models: m }) => {
+                    log(&format!("Found models: {:?}", m));
+                    models.extend(m);
+                }
+                Ok(_) => {
+                    log("Unexpected response from proxy");
+                    return Err("Unexpected response from proxy".to_string());
+                }
+                Err(e) => {
+                    log(&format!("Error getting model list: {}", e));
+                    return Err(format!("Error getting model list: {}", e));
+                }
+            }
+        }
+
+        if models.is_empty() {
+            log("No models found");
+            return Err("No models found".to_string());
+        } else {
+            log(&format!("Found models: {:?}", models));
+            return Ok(models);
+        }
+    }
+
     /// Call a tool with the given name and arguments
     pub fn call_tool(&self, name: String, args: Value) -> Result<McpResponse, String> {
         log(&format!("Calling tool: {} with args: {:?}", name, args));
@@ -352,8 +414,11 @@ impl ChatState {
     }
 
     /// Sends a request to the anthropic-proxy actor and returns the response
-    pub fn send_to_anthropic_proxy(&self) -> Result<CompletionResponse, String> {
-        log("Sending request to anthropic-proxy");
+    pub fn generate_proxy_completion(
+        &self,
+        proxy_name: &String,
+    ) -> Result<CompletionResponse, String> {
+        log(&format!("Sending request to proxy actor: {}", proxy_name));
 
         // Create the Anthropic request
         let request = ProxyRequest::GenerateCompletion {
@@ -369,21 +434,12 @@ impl ChatState {
             },
         };
 
-        // Serialize the request
-        let request_bytes =
-            to_vec(&request).map_err(|e| format!("Error serializing Anthropic request: {}", e))?;
-
-        // Send the request to the anthropic-proxy
-        log(&format!(
-            "Sending request to proxy actor: {}",
-            self.anthropic_proxy_id
-        ));
-        let response_bytes = message_server_host::request(&self.anthropic_proxy_id, &request_bytes)
-            .map_err(|e| format!("Error sending request to anthropic-proxy: {}", e))?;
-
-        // Parse the response
-        let response: ProxyResponse = serde_json::from_slice(&response_bytes)
-            .map_err(|e| format!("Error parsing Anthropic response: {}", e))?;
+        let response = self
+            .proxies
+            .get(proxy_name)
+            .ok_or_else(|| format!("Proxy {} not found", proxy_name))?
+            .send_to_proxy(request)
+            .expect("Error sending request to anthropic-proxy");
 
         match response {
             ProxyResponse::Completion { completion } => {
