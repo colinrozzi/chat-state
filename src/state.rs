@@ -60,23 +60,13 @@ pub struct ConversationSettings {
 impl Default for ConversationSettings {
     fn default() -> Self {
         ConversationSettings {
-            model: "claude-3-7-sonnet-20250219".to_string(),
+            model: "gemini-2.0-flash".to_string(),
             temperature: None,
             max_tokens: 8192,
             additional_params: None,
             system_prompt: None,
             title: "title".to_string(),
-            mcp_servers: vec![McpServer {
-                config: McpConfig {
-                    command: "/Users/colinrozzi/work/mcp-servers/bin/fs-mcp-server".to_string(),
-                    args: vec![
-                        "--allowed-dirs".to_string(),
-                        "/Users/colinrozzi/work/tmp".to_string(),
-                    ],
-                },
-                actor_id: None,
-                tools: None,
-            }],
+            mcp_servers: vec![],
         }
     }
 }

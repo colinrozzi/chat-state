@@ -32,7 +32,7 @@ impl Guest for Component {
                     parsed_init_state.conversation_id
                 ));
                 let anthropic_proxy_id = spawn(
-                    "/Users/colinrozzi/work/actor-registry/anthropic-proxy/manifest.toml",
+                    "/Users/colinrozzi/work/actor-registry/google-proxy/manifest.toml",
                     None,
                 )
                 .map_err(|e| format!("Error spawning anthropic-proxy: {}", e))?;
