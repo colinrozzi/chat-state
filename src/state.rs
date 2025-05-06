@@ -68,7 +68,7 @@ impl Default for ConversationSettings {
     fn default() -> Self {
         ConversationSettings {
             model_config: ModelConfig {
-                model: "gemini-2.0-flash".to_string(),
+                model: "gemini-2.5-pro-exp-03-25".to_string(),
                 provider: "google".to_string(),
             },
             temperature: None,
@@ -81,7 +81,8 @@ impl Default for ConversationSettings {
                     command: "/Users/colinrozzi/work/mcp-servers/bin/fs-mcp-server".to_string(),
                     args: vec![
                         "--allowed-dirs".to_string(),
-                        "/Users/colinrozzi/work/tmp".to_string(),
+                        "/Users/colinrozzi/work/theater,/Users/colinrozzi/work/actor-registry"
+                            .to_string(),
                     ],
                 },
                 actor_id: None,
