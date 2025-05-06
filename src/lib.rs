@@ -5,6 +5,7 @@ mod state;
 
 use crate::bindings::exports::ntwk::theater::actor::Guest;
 use crate::bindings::exports::ntwk::theater::message_server_client::Guest as MessageServerClient;
+use crate::bindings::exports::ntwk::theater::supervisor_handlers::Guest as SupervisorHandlers;
 use crate::bindings::ntwk::theater::runtime::log;
 use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse};
 use crate::proxy::Proxy;
@@ -228,6 +229,20 @@ impl MessageServerClient for Component {
         let (_channel_id, _message) = params;
 
         // No state modification needed for now
+        Ok((state,))
+    }
+}
+
+impl SupervisorHandlers for Component {
+    fn handle_child_error(
+        state: Option<bindings::exports::ntwk::theater::supervisor_handlers::Json>,
+        _params: (
+            String,
+            bindings::exports::ntwk::theater::supervisor_handlers::ActorError,
+        ),
+    ) -> Result<(Option<bindings::exports::ntwk::theater::supervisor_handlers::Json>,), String>
+    {
+        log("Handling child error in chat-state");
         Ok((state,))
     }
 }

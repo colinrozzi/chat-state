@@ -7,5 +7,6 @@ world chat-state {
     import message-server-host;
 
     export message-server-client;
+    export supervisor-handlers;
     export actor;
 }
