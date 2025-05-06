@@ -2374,6 +2374,1765 @@ pub mod ntwk {
                 }
             }
         }
+        /// # Content Store
+        ///
+        /// Provides a content-addressable storage system for actors to store and retrieve data.
+        ///
+        /// ## Purpose
+        ///
+        /// The store interface allows actors to save and retrieve content using content-addressed
+        /// storage, where each piece of content is referenced by a hash of its data. This provides
+        /// immutability, deduplication, and integrity verification for all stored content.
+        ///
+        /// Additionally, the store supports a labeling system that allows human-readable names
+        /// to be attached to content references, making it easier to locate and manage content.
+        ///
+        /// ## Example
+        ///
+        /// ```rust
+        /// use ntwk::theater::store;
+        ///
+        /// // Create a new store
+        /// let store_id = store::new()?;
+        ///
+        /// // Store some content
+        /// let content = "Hello, Theater!".as_bytes().to_vec();
+        /// let content_ref = store::store(store_id, content)?;
+        ///
+        /// // Retrieve it by its content reference
+        /// let retrieved = store::get(store_id, content_ref.clone())?;
+        /// assert_eq!(retrieved, "Hello, Theater!".as_bytes());
+        ///
+        /// // Label the content for easier access
+        /// store::label(store_id, "greeting", content_ref.clone())?;
+        ///
+        /// // Later, retrieve by label
+        /// let label_ref = store::get_by_label(store_id, "greeting")?.unwrap();
+        /// let greeting = store::get(store_id, label_ref)?;
+        /// ```
+        ///
+        /// ## Security
+        ///
+        /// The content store is isolated per actor, preventing direct access to other actors' data.
+        /// All store operations are tracked in the actor's event chain, providing a complete
+        /// audit trail of data operations.
+        ///
+        /// ## Implementation Notes
+        ///
+        /// The store uses content-based addressing where the reference to content is derived from
+        /// a cryptographic hash of the content itself. This ensures:
+        ///
+        /// - Content cannot be modified without changing its reference
+        /// - Identical content is stored only once (automatic deduplication)
+        /// - Content integrity can be verified
+        #[allow(dead_code, async_fn_in_trait, unused_imports, clippy::all)]
+        pub mod store {
+            #[used]
+            #[doc(hidden)]
+            static __FORCE_SECTION_REF: fn() = super::super::super::__link_custom_section_describing_imports;
+            use super::super::super::_rt;
+            /// # Content Reference
+            ///
+            /// A reference to content stored in the content-addressable store.
+            ///
+            /// ## Purpose
+            ///
+            /// ContentRef provides a stable, immutable reference to content based on its hash,
+            /// enabling content-addressable storage where data is referenced by its cryptographic hash
+            /// rather than by location or name.
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store::{content_ref, store};
+            ///
+            /// // Store content and get its reference
+            /// let store_id = store::new()?;
+            /// let data = b"Some important data".to_vec();
+            /// let ref = store::store(store_id, data)?;
+            ///
+            /// // The hash in the content ref is a SHA-256 digest
+            /// println!("Stored content with hash: {}", ref.hash);
+            /// ```
+            ///
+            /// ## Security
+            ///
+            /// Content references use cryptographic hashes that are collision-resistant,
+            /// ensuring that distinct content will have distinct references. This provides
+            /// integrity verification for all stored content.
+            #[derive(Clone)]
+            pub struct ContentRef {
+                /// Cryptographic hash of the content (SHA-256 in hexadecimal format)
+                pub hash: _rt::String,
+            }
+            impl ::core::fmt::Debug for ContentRef {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    f.debug_struct("ContentRef").field("hash", &self.hash).finish()
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Create a new store
+            ///
+            /// Creates a new content-addressable store instance.
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(string)` - The ID of the newly created store
+            /// * `Err(string)` - Error message if store creation fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Create a new store
+            /// let store_id = store::new()?;
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// Each actor has access to its own isolated store instances. Store IDs are only
+            /// valid within the context of the actor that created them.
+            pub fn new() -> Result<_rt::String, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let ptr0 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "new"]
+                        fn wit_import1(_: *mut u8);
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import1(_: *mut u8) {
+                        unreachable!()
+                    }
+                    unsafe { wit_import1(ptr0) };
+                    let l2 = i32::from(*ptr0.add(0).cast::<u8>());
+                    let result9 = match l2 {
+                        0 => {
+                            let e = {
+                                let l3 = *ptr0
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l4 = *ptr0
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len5 = l4;
+                                let bytes5 = _rt::Vec::from_raw_parts(
+                                    l3.cast(),
+                                    len5,
+                                    len5,
+                                );
+                                _rt::string_lift(bytes5)
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l6 = *ptr0
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l7 = *ptr0
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len8 = l7;
+                                let bytes8 = _rt::Vec::from_raw_parts(
+                                    l6.cast(),
+                                    len8,
+                                    len8,
+                                );
+                                _rt::string_lift(bytes8)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result9
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Store content
+            ///
+            /// Stores content in the content-addressable store and returns a reference to it.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to use
+            /// * `content` - The content bytes to store
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(content-ref)` - Reference to the stored content
+            /// * `Err(string)` - Error message if storage fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Store some content
+            /// let data = serde_json::to_vec(&my_data)?;
+            /// let content_ref = store::store(store_id, data)?;
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// If identical content already exists in the store, the existing content reference
+            /// will be returned without storing a duplicate copy.
+            pub fn store(
+                store_id: &str,
+                content: &[u8],
+            ) -> Result<ContentRef, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let vec1 = content;
+                    let ptr1 = vec1.as_ptr().cast::<u8>();
+                    let len1 = vec1.len();
+                    let ptr2 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "store"]
+                        fn wit_import3(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import3(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import3(ptr0.cast_mut(), len0, ptr1.cast_mut(), len1, ptr2)
+                    };
+                    let l4 = i32::from(*ptr2.add(0).cast::<u8>());
+                    let result11 = match l4 {
+                        0 => {
+                            let e = {
+                                let l5 = *ptr2
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l6 = *ptr2
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len7 = l6;
+                                let bytes7 = _rt::Vec::from_raw_parts(
+                                    l5.cast(),
+                                    len7,
+                                    len7,
+                                );
+                                ContentRef {
+                                    hash: _rt::string_lift(bytes7),
+                                }
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l8 = *ptr2
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l9 = *ptr2
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len10 = l9;
+                                let bytes10 = _rt::Vec::from_raw_parts(
+                                    l8.cast(),
+                                    len10,
+                                    len10,
+                                );
+                                _rt::string_lift(bytes10)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result11
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Retrieve content
+            ///
+            /// Retrieves content from the store using its content reference.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to use
+            /// * `content-ref` - Reference to the content to retrieve
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(list<u8>)` - The retrieved content bytes
+            /// * `Err(string)` - Error message if retrieval fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Retrieve content
+            /// let content = store::get(store_id, content_ref)?;
+            /// let my_data: MyData = serde_json::from_slice(&content)?;
+            /// ```
+            pub fn get(
+                store_id: &str,
+                content_ref: &ContentRef,
+            ) -> Result<_rt::Vec<u8>, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let ContentRef { hash: hash1 } = content_ref;
+                    let vec2 = hash1;
+                    let ptr2 = vec2.as_ptr().cast::<u8>();
+                    let len2 = vec2.len();
+                    let ptr3 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "get"]
+                        fn wit_import4(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import4(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import4(ptr0.cast_mut(), len0, ptr2.cast_mut(), len2, ptr3)
+                    };
+                    let l5 = i32::from(*ptr3.add(0).cast::<u8>());
+                    let result12 = match l5 {
+                        0 => {
+                            let e = {
+                                let l6 = *ptr3
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l7 = *ptr3
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len8 = l7;
+                                _rt::Vec::from_raw_parts(l6.cast(), len8, len8)
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l9 = *ptr3
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l10 = *ptr3
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len11 = l10;
+                                let bytes11 = _rt::Vec::from_raw_parts(
+                                    l9.cast(),
+                                    len11,
+                                    len11,
+                                );
+                                _rt::string_lift(bytes11)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result12
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Check if content exists
+            ///
+            /// Checks if a particular content reference exists in the store.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to check
+            /// * `content-ref` - Reference to check for
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(bool)` - True if the content exists, false otherwise
+            /// * `Err(string)` - Error message if the check fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Check if content exists before attempting to retrieve it
+            /// if store::exists(store_id, content_ref)? {
+            ///     let content = store::get(store_id, content_ref)?;
+            ///     // Process content...
+            /// } else {
+            ///     // Handle missing content case
+            /// }
+            /// ```
+            pub fn exists(
+                store_id: &str,
+                content_ref: &ContentRef,
+            ) -> Result<bool, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let ContentRef { hash: hash1 } = content_ref;
+                    let vec2 = hash1;
+                    let ptr2 = vec2.as_ptr().cast::<u8>();
+                    let len2 = vec2.len();
+                    let ptr3 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "exists"]
+                        fn wit_import4(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import4(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import4(ptr0.cast_mut(), len0, ptr2.cast_mut(), len2, ptr3)
+                    };
+                    let l5 = i32::from(*ptr3.add(0).cast::<u8>());
+                    let result10 = match l5 {
+                        0 => {
+                            let e = {
+                                let l6 = i32::from(
+                                    *ptr3.add(::core::mem::size_of::<*const u8>()).cast::<u8>(),
+                                );
+                                _rt::bool_lift(l6 as u8)
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l7 = *ptr3
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l8 = *ptr3
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len9 = l8;
+                                let bytes9 = _rt::Vec::from_raw_parts(
+                                    l7.cast(),
+                                    len9,
+                                    len9,
+                                );
+                                _rt::string_lift(bytes9)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result10
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Attach a label to content
+            ///
+            /// Associates a human-readable label with a content reference.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to use
+            /// * `label` - The human-readable label to attach
+            /// * `content-ref` - Reference to the content to label
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(_)` - Label was successfully attached
+            /// * `Err(string)` - Error message if labeling fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Store and label config data
+            /// let config_data = serde_json::to_vec(&my_config)?;
+            /// let ref = store::store(store_id, config_data)?;
+            /// store::label(store_id, "current-config", ref)?;
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// A label can point to multiple content references, effectively acting as a collection.
+            /// Each call to this function adds the content reference to the label without removing
+            /// previous references.
+            pub fn label(
+                store_id: &str,
+                label: &str,
+                content_ref: &ContentRef,
+            ) -> Result<(), _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let vec1 = label;
+                    let ptr1 = vec1.as_ptr().cast::<u8>();
+                    let len1 = vec1.len();
+                    let ContentRef { hash: hash2 } = content_ref;
+                    let vec3 = hash2;
+                    let ptr3 = vec3.as_ptr().cast::<u8>();
+                    let len3 = vec3.len();
+                    let ptr4 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "label"]
+                        fn wit_import5(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import5(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import5(
+                            ptr0.cast_mut(),
+                            len0,
+                            ptr1.cast_mut(),
+                            len1,
+                            ptr3.cast_mut(),
+                            len3,
+                            ptr4,
+                        )
+                    };
+                    let l6 = i32::from(*ptr4.add(0).cast::<u8>());
+                    let result10 = match l6 {
+                        0 => {
+                            let e = ();
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l7 = *ptr4
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l8 = *ptr4
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len9 = l8;
+                                let bytes9 = _rt::Vec::from_raw_parts(
+                                    l7.cast(),
+                                    len9,
+                                    len9,
+                                );
+                                _rt::string_lift(bytes9)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result10
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Get content reference by label
+            ///
+            /// Retrieves a content reference associated with a label.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to use
+            /// * `label` - The label to look up
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(option<content-ref>)` - The content reference if found, None if the label doesn't exist
+            /// * `Err(string)` - Error message if the lookup fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Retrieve the current configuration
+            /// if let Some(ref) = store::get_by_label(store_id, "current-config")? {
+            ///     let config_data = store::get(store_id, ref)?;
+            ///     let config: MyConfig = serde_json::from_slice(&config_data)?;
+            ///     // Use configuration...
+            /// } else {
+            ///     // No configuration found
+            /// }
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// If a label points to multiple content references, this function returns the most
+            /// recently added reference.
+            pub fn get_by_label(
+                store_id: &str,
+                label: &str,
+            ) -> Result<Option<ContentRef>, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 4 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 4
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let vec1 = label;
+                    let ptr1 = vec1.as_ptr().cast::<u8>();
+                    let len1 = vec1.len();
+                    let ptr2 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "get-by-label"]
+                        fn wit_import3(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import3(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import3(ptr0.cast_mut(), len0, ptr1.cast_mut(), len1, ptr2)
+                    };
+                    let l4 = i32::from(*ptr2.add(0).cast::<u8>());
+                    let result12 = match l4 {
+                        0 => {
+                            let e = {
+                                let l5 = i32::from(
+                                    *ptr2.add(::core::mem::size_of::<*const u8>()).cast::<u8>(),
+                                );
+                                match l5 {
+                                    0 => None,
+                                    1 => {
+                                        let e = {
+                                            let l6 = *ptr2
+                                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                                .cast::<*mut u8>();
+                                            let l7 = *ptr2
+                                                .add(3 * ::core::mem::size_of::<*const u8>())
+                                                .cast::<usize>();
+                                            let len8 = l7;
+                                            let bytes8 = _rt::Vec::from_raw_parts(
+                                                l6.cast(),
+                                                len8,
+                                                len8,
+                                            );
+                                            ContentRef {
+                                                hash: _rt::string_lift(bytes8),
+                                            }
+                                        };
+                                        Some(e)
+                                    }
+                                    _ => _rt::invalid_enum_discriminant(),
+                                }
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l9 = *ptr2
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l10 = *ptr2
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len11 = l10;
+                                let bytes11 = _rt::Vec::from_raw_parts(
+                                    l9.cast(),
+                                    len11,
+                                    len11,
+                                );
+                                _rt::string_lift(bytes11)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result12
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Remove a label
+            ///
+            /// Deletes a label and its associations with content references.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to use
+            /// * `label` - The label to remove
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(_)` - Label was successfully removed
+            /// * `Err(string)` - Error message if removal fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Remove an obsolete label
+            /// store::remove_label(store_id, "old-config")?;
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// Removing a label does not delete the content it points to, only the association
+            /// between the label and the content references.
+            pub fn remove_label(store_id: &str, label: &str) -> Result<(), _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let vec1 = label;
+                    let ptr1 = vec1.as_ptr().cast::<u8>();
+                    let len1 = vec1.len();
+                    let ptr2 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "remove-label"]
+                        fn wit_import3(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import3(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import3(ptr0.cast_mut(), len0, ptr1.cast_mut(), len1, ptr2)
+                    };
+                    let l4 = i32::from(*ptr2.add(0).cast::<u8>());
+                    let result8 = match l4 {
+                        0 => {
+                            let e = ();
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l5 = *ptr2
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l6 = *ptr2
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len7 = l6;
+                                let bytes7 = _rt::Vec::from_raw_parts(
+                                    l5.cast(),
+                                    len7,
+                                    len7,
+                                );
+                                _rt::string_lift(bytes7)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result8
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Remove a specific content reference from a label
+            ///
+            /// Removes the association between a label and a specific content reference.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to use
+            /// * `label` - The label to modify
+            /// * `content-ref` - The content reference to remove from the label
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(_)` - Reference was successfully removed from the label
+            /// * `Err(string)` - Error message if removal fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Remove a specific version from the "historical-configs" label
+            /// store::remove_from_label(store_id, "historical-configs", outdated_ref)?;
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// This operation only removes the association between the label and the content reference.
+            /// It does not delete the content itself.
+            pub fn remove_from_label(
+                store_id: &str,
+                label: &str,
+                content_ref: &ContentRef,
+            ) -> Result<(), _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let vec1 = label;
+                    let ptr1 = vec1.as_ptr().cast::<u8>();
+                    let len1 = vec1.len();
+                    let ContentRef { hash: hash2 } = content_ref;
+                    let vec3 = hash2;
+                    let ptr3 = vec3.as_ptr().cast::<u8>();
+                    let len3 = vec3.len();
+                    let ptr4 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "remove-from-label"]
+                        fn wit_import5(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import5(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import5(
+                            ptr0.cast_mut(),
+                            len0,
+                            ptr1.cast_mut(),
+                            len1,
+                            ptr3.cast_mut(),
+                            len3,
+                            ptr4,
+                        )
+                    };
+                    let l6 = i32::from(*ptr4.add(0).cast::<u8>());
+                    let result10 = match l6 {
+                        0 => {
+                            let e = ();
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l7 = *ptr4
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l8 = *ptr4
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len9 = l8;
+                                let bytes9 = _rt::Vec::from_raw_parts(
+                                    l7.cast(),
+                                    len9,
+                                    len9,
+                                );
+                                _rt::string_lift(bytes9)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result10
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Store content and immediately label it
+            ///
+            /// Stores content and associates it with a label in a single operation.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to use
+            /// * `label` - The label to attach to the content
+            /// * `content` - The content bytes to store
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(content-ref)` - Reference to the stored content
+            /// * `Err(string)` - Error message if the operation fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Store and label user data in one operation
+            /// let user_data = serde_json::to_vec(&user)?;
+            /// let ref = store::store_at_label(store_id, "user-profile", user_data)?;
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// This is a convenience function that combines `store` and `label` operations.
+            /// The label will point to the new content reference in addition to any existing
+            /// content references it may already point to.
+            pub fn store_at_label(
+                store_id: &str,
+                label: &str,
+                content: &[u8],
+            ) -> Result<ContentRef, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let vec1 = label;
+                    let ptr1 = vec1.as_ptr().cast::<u8>();
+                    let len1 = vec1.len();
+                    let vec2 = content;
+                    let ptr2 = vec2.as_ptr().cast::<u8>();
+                    let len2 = vec2.len();
+                    let ptr3 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "store-at-label"]
+                        fn wit_import4(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import4(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import4(
+                            ptr0.cast_mut(),
+                            len0,
+                            ptr1.cast_mut(),
+                            len1,
+                            ptr2.cast_mut(),
+                            len2,
+                            ptr3,
+                        )
+                    };
+                    let l5 = i32::from(*ptr3.add(0).cast::<u8>());
+                    let result12 = match l5 {
+                        0 => {
+                            let e = {
+                                let l6 = *ptr3
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l7 = *ptr3
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len8 = l7;
+                                let bytes8 = _rt::Vec::from_raw_parts(
+                                    l6.cast(),
+                                    len8,
+                                    len8,
+                                );
+                                ContentRef {
+                                    hash: _rt::string_lift(bytes8),
+                                }
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l9 = *ptr3
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l10 = *ptr3
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len11 = l10;
+                                let bytes11 = _rt::Vec::from_raw_parts(
+                                    l9.cast(),
+                                    len11,
+                                    len11,
+                                );
+                                _rt::string_lift(bytes11)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result12
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Replace content at a label
+            ///
+            /// Stores new content and makes the label point exclusively to it, removing any
+            /// previous associations.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to use
+            /// * `label` - The label to update
+            /// * `content` - The new content bytes to store
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(content-ref)` - Reference to the stored content
+            /// * `Err(string)` - Error message if the operation fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Update configuration with new values
+            /// let new_config = serde_json::to_vec(&updated_config)?;
+            /// let ref = store::replace_content_at_label(store_id, "current-config", new_config)?;
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// This operation is atomic - the label will either point to the new content reference
+            /// or remain unchanged if the operation fails.
+            pub fn replace_content_at_label(
+                store_id: &str,
+                label: &str,
+                content: &[u8],
+            ) -> Result<ContentRef, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let vec1 = label;
+                    let ptr1 = vec1.as_ptr().cast::<u8>();
+                    let len1 = vec1.len();
+                    let vec2 = content;
+                    let ptr2 = vec2.as_ptr().cast::<u8>();
+                    let len2 = vec2.len();
+                    let ptr3 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "replace-content-at-label"]
+                        fn wit_import4(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import4(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import4(
+                            ptr0.cast_mut(),
+                            len0,
+                            ptr1.cast_mut(),
+                            len1,
+                            ptr2.cast_mut(),
+                            len2,
+                            ptr3,
+                        )
+                    };
+                    let l5 = i32::from(*ptr3.add(0).cast::<u8>());
+                    let result12 = match l5 {
+                        0 => {
+                            let e = {
+                                let l6 = *ptr3
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l7 = *ptr3
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len8 = l7;
+                                let bytes8 = _rt::Vec::from_raw_parts(
+                                    l6.cast(),
+                                    len8,
+                                    len8,
+                                );
+                                ContentRef {
+                                    hash: _rt::string_lift(bytes8),
+                                }
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l9 = *ptr3
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l10 = *ptr3
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len11 = l10;
+                                let bytes11 = _rt::Vec::from_raw_parts(
+                                    l9.cast(),
+                                    len11,
+                                    len11,
+                                );
+                                _rt::string_lift(bytes11)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result12
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Replace label with specific content reference
+            ///
+            /// Updates a label to point exclusively to an existing content reference.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to use
+            /// * `label` - The label to update
+            /// * `content-ref` - The content reference the label should point to
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(_)` - Label was successfully updated
+            /// * `Err(string)` - Error message if the update fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Revert to a previous version
+            /// store::replace_at_label(store_id, "current-config", previous_version_ref)?;
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// This operation removes any existing associations between the label and other
+            /// content references. After this operation, the label will point only to the
+            /// specified content reference.
+            pub fn replace_at_label(
+                store_id: &str,
+                label: &str,
+                content_ref: &ContentRef,
+            ) -> Result<(), _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let vec1 = label;
+                    let ptr1 = vec1.as_ptr().cast::<u8>();
+                    let len1 = vec1.len();
+                    let ContentRef { hash: hash2 } = content_ref;
+                    let vec3 = hash2;
+                    let ptr3 = vec3.as_ptr().cast::<u8>();
+                    let len3 = vec3.len();
+                    let ptr4 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "replace-at-label"]
+                        fn wit_import5(
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                            _: usize,
+                            _: *mut u8,
+                        );
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import5(
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                        _: usize,
+                        _: *mut u8,
+                    ) {
+                        unreachable!()
+                    }
+                    unsafe {
+                        wit_import5(
+                            ptr0.cast_mut(),
+                            len0,
+                            ptr1.cast_mut(),
+                            len1,
+                            ptr3.cast_mut(),
+                            len3,
+                            ptr4,
+                        )
+                    };
+                    let l6 = i32::from(*ptr4.add(0).cast::<u8>());
+                    let result10 = match l6 {
+                        0 => {
+                            let e = ();
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l7 = *ptr4
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l8 = *ptr4
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len9 = l8;
+                                let bytes9 = _rt::Vec::from_raw_parts(
+                                    l7.cast(),
+                                    len9,
+                                    len9,
+                                );
+                                _rt::string_lift(bytes9)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result10
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # List all labels
+            ///
+            /// Retrieves a list of all labels in the store.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to query
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(list<string>)` - List of all labels in the store
+            /// * `Err(string)` - Error message if the operation fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Get all available labels
+            /// let labels = store::list_labels(store_id)?;
+            /// for label in labels {
+            ///     println!("Found label: {}", label);
+            /// }
+            /// ```
+            pub fn list_labels(
+                store_id: &str,
+            ) -> Result<_rt::Vec<_rt::String>, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let ptr1 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "list-labels"]
+                        fn wit_import2(_: *mut u8, _: usize, _: *mut u8);
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import2(_: *mut u8, _: usize, _: *mut u8) {
+                        unreachable!()
+                    }
+                    unsafe { wit_import2(ptr0.cast_mut(), len0, ptr1) };
+                    let l3 = i32::from(*ptr1.add(0).cast::<u8>());
+                    let result13 = match l3 {
+                        0 => {
+                            let e = {
+                                let l4 = *ptr1
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l5 = *ptr1
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let base9 = l4;
+                                let len9 = l5;
+                                let mut result9 = _rt::Vec::with_capacity(len9);
+                                for i in 0..len9 {
+                                    let base = base9
+                                        .add(i * (2 * ::core::mem::size_of::<*const u8>()));
+                                    let e9 = {
+                                        let l6 = *base.add(0).cast::<*mut u8>();
+                                        let l7 = *base
+                                            .add(::core::mem::size_of::<*const u8>())
+                                            .cast::<usize>();
+                                        let len8 = l7;
+                                        let bytes8 = _rt::Vec::from_raw_parts(
+                                            l6.cast(),
+                                            len8,
+                                            len8,
+                                        );
+                                        _rt::string_lift(bytes8)
+                                    };
+                                    result9.push(e9);
+                                }
+                                _rt::cabi_dealloc(
+                                    base9,
+                                    len9 * (2 * ::core::mem::size_of::<*const u8>()),
+                                    ::core::mem::size_of::<*const u8>(),
+                                );
+                                result9
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l10 = *ptr1
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l11 = *ptr1
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len12 = l11;
+                                let bytes12 = _rt::Vec::from_raw_parts(
+                                    l10.cast(),
+                                    len12,
+                                    len12,
+                                );
+                                _rt::string_lift(bytes12)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result13
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # List all content references
+            ///
+            /// Retrieves a list of all content references in the store.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to query
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(list<content-ref>)` - List of all content references in the store
+            /// * `Err(string)` - Error message if the operation fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Get all content references
+            /// let refs = store::list_all_content(store_id)?;
+            /// println!("Store contains {} content items", refs.len());
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// This operation may be expensive for stores with a large amount of content.
+            /// Consider using labels to organize and access content more efficiently.
+            pub fn list_all_content(
+                store_id: &str,
+            ) -> Result<_rt::Vec<ContentRef>, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let ptr1 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "list-all-content"]
+                        fn wit_import2(_: *mut u8, _: usize, _: *mut u8);
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import2(_: *mut u8, _: usize, _: *mut u8) {
+                        unreachable!()
+                    }
+                    unsafe { wit_import2(ptr0.cast_mut(), len0, ptr1) };
+                    let l3 = i32::from(*ptr1.add(0).cast::<u8>());
+                    let result13 = match l3 {
+                        0 => {
+                            let e = {
+                                let l4 = *ptr1
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l5 = *ptr1
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let base9 = l4;
+                                let len9 = l5;
+                                let mut result9 = _rt::Vec::with_capacity(len9);
+                                for i in 0..len9 {
+                                    let base = base9
+                                        .add(i * (2 * ::core::mem::size_of::<*const u8>()));
+                                    let e9 = {
+                                        let l6 = *base.add(0).cast::<*mut u8>();
+                                        let l7 = *base
+                                            .add(::core::mem::size_of::<*const u8>())
+                                            .cast::<usize>();
+                                        let len8 = l7;
+                                        let bytes8 = _rt::Vec::from_raw_parts(
+                                            l6.cast(),
+                                            len8,
+                                            len8,
+                                        );
+                                        ContentRef {
+                                            hash: _rt::string_lift(bytes8),
+                                        }
+                                    };
+                                    result9.push(e9);
+                                }
+                                _rt::cabi_dealloc(
+                                    base9,
+                                    len9 * (2 * ::core::mem::size_of::<*const u8>()),
+                                    ::core::mem::size_of::<*const u8>(),
+                                );
+                                result9
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l10 = *ptr1
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l11 = *ptr1
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len12 = l11;
+                                let bytes12 = _rt::Vec::from_raw_parts(
+                                    l10.cast(),
+                                    len12,
+                                    len12,
+                                );
+                                _rt::string_lift(bytes12)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result13
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            /// # Calculate total size
+            ///
+            /// Calculates the total size of all content in the store.
+            ///
+            /// ## Parameters
+            ///
+            /// * `store-id` - ID of the store to query
+            ///
+            /// ## Returns
+            ///
+            /// * `Ok(u64)` - Total size in bytes
+            /// * `Err(string)` - Error message if the calculation fails
+            ///
+            /// ## Example
+            ///
+            /// ```rust
+            /// use ntwk::theater::store;
+            ///
+            /// // Check store size
+            /// let total_bytes = store::calculate_total_size(store_id)?;
+            /// println!("Store contains {} bytes of data", total_bytes);
+            ///
+            /// // Format as human-readable size
+            /// let size_mb = total_bytes as f64 / (1024.0 * 1024.0);
+            /// println!("Store size: {:.2} MB", size_mb);
+            /// ```
+            ///
+            /// ## Implementation Notes
+            ///
+            /// This operation calculates the actual storage space used, accounting for
+            /// deduplication of identical content.
+            pub fn calculate_total_size(store_id: &str) -> Result<u64, _rt::String> {
+                unsafe {
+                    #[repr(align(8))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 8 + 2 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 8
+                            + 2 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let vec0 = store_id;
+                    let ptr0 = vec0.as_ptr().cast::<u8>();
+                    let len0 = vec0.len();
+                    let ptr1 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/store")]
+                    unsafe extern "C" {
+                        #[link_name = "calculate-total-size"]
+                        fn wit_import2(_: *mut u8, _: usize, _: *mut u8);
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import2(_: *mut u8, _: usize, _: *mut u8) {
+                        unreachable!()
+                    }
+                    unsafe { wit_import2(ptr0.cast_mut(), len0, ptr1) };
+                    let l3 = i32::from(*ptr1.add(0).cast::<u8>());
+                    let result8 = match l3 {
+                        0 => {
+                            let e = {
+                                let l4 = *ptr1.add(8).cast::<i64>();
+                                l4 as u64
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l5 = *ptr1.add(8).cast::<*mut u8>();
+                                let l6 = *ptr1
+                                    .add(8 + 1 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len7 = l6;
+                                let bytes7 = _rt::Vec::from_raw_parts(
+                                    l5.cast(),
+                                    len7,
+                                    len7,
+                                );
+                                _rt::string_lift(bytes7)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result8
+                }
+            }
+        }
     }
 }
 #[rustfmt::skip]
@@ -3889,6 +5648,17 @@ mod _rt {
             self as i64
         }
     }
+    pub unsafe fn bool_lift(val: u8) -> bool {
+        if cfg!(debug_assertions) {
+            match val {
+                0 => false,
+                1 => true,
+                _ => panic!("invalid bool discriminant"),
+            }
+        } else {
+            val != 0
+        }
+    }
     #[cfg(target_arch = "wasm32")]
     pub fn run_ctors_once() {
         wit_bindgen_rt::run_ctors_once();
@@ -3938,9 +5708,9 @@ pub(crate) use __export_chat_state_impl as export;
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 2317] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\x8c\x11\x01A\x02\x01\
-A\x19\x01B\x19\x01p}\x04\0\x04json\x03\0\0\x01p}\x01k\x02\x04\0\x05state\x03\0\x03\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 2908] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xdb\x15\x01A\x02\x01\
+A\x1b\x01B\x19\x01p}\x04\0\x04json\x03\0\0\x01p}\x01k\x02\x04\0\x05state\x03\0\x03\
 \x01s\x04\0\x08actor-id\x03\0\x05\x01s\x04\0\x0achannel-id\x03\0\x07\x01k\x01\x01\
 r\x02\x08accepted\x7f\x07message\x09\x04\0\x0echannel-accept\x03\0\x0a\x01kw\x01\
 r\x03\x0aevent-types\x06parent\x0c\x04data\x01\x04\0\x05event\x03\0\x0d\x01r\x02\
@@ -3974,27 +5744,40 @@ j\x01\x03\x01s\x01@\x01\x08child-ids\0\x0b\x04\0\x0fget-child-state\x01\x0c\x01p
 \x0achannel-id\x05\0\x06\x04\0\x0dclose-channel\x01\x0d\x01ps\x01@\0\0\x0e\x04\0\
 \x19list-outstanding-requests\x01\x0f\x01@\x02\x0arequest-ids\x08response\x01\0\x06\
 \x04\0\x12respond-to-request\x01\x10\x01@\x01\x0arequest-ids\0\x06\x04\0\x0ecanc\
-el-request\x01\x11\x03\0\x20ntwk:theater/message-server-host\x05\x09\x02\x03\0\0\
-\x05event\x02\x03\0\0\x0echannel-accept\x01B\x1e\x02\x03\x02\x01\x01\x04\0\x04js\
-on\x03\0\0\x02\x03\x02\x01\x0a\x04\0\x05event\x03\0\x02\x02\x03\x02\x01\x08\x04\0\
-\x0achannel-id\x03\0\x04\x02\x03\x02\x01\x0b\x04\0\x0echannel-accept\x03\0\x06\x01\
-k\x01\x01o\x01\x01\x01o\x01\x08\x01j\x01\x0a\x01s\x01@\x02\x05state\x08\x06param\
-s\x09\0\x0b\x04\0\x0bhandle-send\x01\x0c\x01o\x02s\x01\x01o\x02\x08\x0a\x01j\x01\
-\x0e\x01s\x01@\x02\x05state\x08\x06params\x0d\0\x0f\x04\0\x0ehandle-request\x01\x10\
-\x01o\x01\x07\x01o\x02\x08\x11\x01j\x01\x12\x01s\x01@\x02\x05state\x08\x06params\
-\x09\0\x13\x04\0\x13handle-channel-open\x01\x14\x01o\x02\x05\x01\x01@\x02\x05sta\
-te\x08\x06params\x15\0\x0b\x04\0\x16handle-channel-message\x01\x16\x01o\x01\x05\x01\
-@\x02\x05state\x08\x06params\x17\0\x0b\x04\0\x14handle-channel-close\x01\x18\x04\
-\0\"ntwk:theater/message-server-client\x05\x0c\x02\x03\0\0\x0bactor-error\x01B\x0a\
-\x02\x03\x02\x01\x01\x04\0\x04json\x03\0\0\x02\x03\x02\x01\x0d\x04\0\x0bactor-er\
-ror\x03\0\x02\x01k\x01\x01o\x02s\x03\x01o\x01\x04\x01j\x01\x06\x01s\x01@\x02\x05\
-state\x04\x06params\x05\0\x07\x04\0\x12handle-child-error\x01\x08\x04\0\x20ntwk:\
-theater/supervisor-handlers\x05\x0e\x02\x03\0\0\x05state\x01B\x07\x02\x03\x02\x01\
-\x0f\x04\0\x05state\x03\0\0\x01o\x01s\x01o\x01\x01\x01j\x01\x03\x01s\x01@\x02\x05\
-state\x01\x06params\x02\0\x04\x04\0\x04init\x01\x05\x04\0\x12ntwk:theater/actor\x05\
-\x10\x04\0\x17ntwk:theater/chat-state\x04\0\x0b\x10\x01\0\x0achat-state\x03\0\0\0\
-G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.1\x10wit-bindge\
-n-rust\x060.41.0";
+el-request\x01\x11\x03\0\x20ntwk:theater/message-server-host\x05\x09\x01B(\x01r\x01\
+\x04hashs\x04\0\x0bcontent-ref\x03\0\0\x01j\x01s\x01s\x01@\0\0\x02\x04\0\x03new\x01\
+\x03\x01p}\x01j\x01\x01\x01s\x01@\x02\x08store-ids\x07content\x04\0\x05\x04\0\x05\
+store\x01\x06\x01j\x01\x04\x01s\x01@\x02\x08store-ids\x0bcontent-ref\x01\0\x07\x04\
+\0\x03get\x01\x08\x01j\x01\x7f\x01s\x01@\x02\x08store-ids\x0bcontent-ref\x01\0\x09\
+\x04\0\x06exists\x01\x0a\x01j\0\x01s\x01@\x03\x08store-ids\x05labels\x0bcontent-\
+ref\x01\0\x0b\x04\0\x05label\x01\x0c\x01k\x01\x01j\x01\x0d\x01s\x01@\x02\x08stor\
+e-ids\x05labels\0\x0e\x04\0\x0cget-by-label\x01\x0f\x01@\x02\x08store-ids\x05lab\
+els\0\x0b\x04\0\x0cremove-label\x01\x10\x04\0\x11remove-from-label\x01\x0c\x01@\x03\
+\x08store-ids\x05labels\x07content\x04\0\x05\x04\0\x0estore-at-label\x01\x11\x04\
+\0\x18replace-content-at-label\x01\x11\x04\0\x10replace-at-label\x01\x0c\x01ps\x01\
+j\x01\x12\x01s\x01@\x01\x08store-ids\0\x13\x04\0\x0blist-labels\x01\x14\x01p\x01\
+\x01j\x01\x15\x01s\x01@\x01\x08store-ids\0\x16\x04\0\x10list-all-content\x01\x17\
+\x01j\x01w\x01s\x01@\x01\x08store-ids\0\x18\x04\0\x14calculate-total-size\x01\x19\
+\x03\0\x12ntwk:theater/store\x05\x0a\x02\x03\0\0\x05event\x02\x03\0\0\x0echannel\
+-accept\x01B\x1e\x02\x03\x02\x01\x01\x04\0\x04json\x03\0\0\x02\x03\x02\x01\x0b\x04\
+\0\x05event\x03\0\x02\x02\x03\x02\x01\x08\x04\0\x0achannel-id\x03\0\x04\x02\x03\x02\
+\x01\x0c\x04\0\x0echannel-accept\x03\0\x06\x01k\x01\x01o\x01\x01\x01o\x01\x08\x01\
+j\x01\x0a\x01s\x01@\x02\x05state\x08\x06params\x09\0\x0b\x04\0\x0bhandle-send\x01\
+\x0c\x01o\x02s\x01\x01o\x02\x08\x0a\x01j\x01\x0e\x01s\x01@\x02\x05state\x08\x06p\
+arams\x0d\0\x0f\x04\0\x0ehandle-request\x01\x10\x01o\x01\x07\x01o\x02\x08\x11\x01\
+j\x01\x12\x01s\x01@\x02\x05state\x08\x06params\x09\0\x13\x04\0\x13handle-channel\
+-open\x01\x14\x01o\x02\x05\x01\x01@\x02\x05state\x08\x06params\x15\0\x0b\x04\0\x16\
+handle-channel-message\x01\x16\x01o\x01\x05\x01@\x02\x05state\x08\x06params\x17\0\
+\x0b\x04\0\x14handle-channel-close\x01\x18\x04\0\"ntwk:theater/message-server-cl\
+ient\x05\x0d\x02\x03\0\0\x0bactor-error\x01B\x0a\x02\x03\x02\x01\x01\x04\0\x04js\
+on\x03\0\0\x02\x03\x02\x01\x0e\x04\0\x0bactor-error\x03\0\x02\x01k\x01\x01o\x02s\
+\x03\x01o\x01\x04\x01j\x01\x06\x01s\x01@\x02\x05state\x04\x06params\x05\0\x07\x04\
+\0\x12handle-child-error\x01\x08\x04\0\x20ntwk:theater/supervisor-handlers\x05\x0f\
+\x02\x03\0\0\x05state\x01B\x07\x02\x03\x02\x01\x10\x04\0\x05state\x03\0\0\x01o\x01\
+s\x01o\x01\x01\x01j\x01\x03\x01s\x01@\x02\x05state\x01\x06params\x02\0\x04\x04\0\
+\x04init\x01\x05\x04\0\x12ntwk:theater/actor\x05\x11\x04\0\x17ntwk:theater/chat-\
+state\x04\0\x0b\x10\x01\0\x0achat-state\x03\0\0\0G\x09producers\x01\x0cprocessed\
+-by\x02\x0dwit-component\x070.227.1\x10wit-bindgen-rust\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

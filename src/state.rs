@@ -1,5 +1,6 @@
 use crate::bindings::ntwk::theater::message_server_host;
 use crate::bindings::ntwk::theater::runtime::log;
+use crate::bindings::ntwk::theater::store;
 use crate::bindings::ntwk::theater::supervisor::spawn;
 use crate::protocol::{McpActorRequest, McpResponse};
 use crate::proxy::Proxy;
@@ -24,13 +25,26 @@ pub struct ChatState {
     pub proxies: HashMap<String, Proxy>,
 
     /// Conversation content
-    pub messages: Vec<Message>,
+    pub messages: HashMap<String, ChatMessage>,
 
     /// Conversation settings
     pub settings: ConversationSettings,
 
     /// Subscription information
     pub subscriptions: Vec<String>,
+
+    /// Store ID for the conversation
+    pub store_id: String,
+
+    /// Head of the conversation
+    pub head: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ChatMessage {
+    pub id: String,
+    pub parent_id: Option<String>,
+    pub message: Message,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -144,14 +158,21 @@ impl McpServer {
 
 impl ChatState {
     /// Initialize a new state with default values
-    pub fn new(id: String, conversation_id: String, proxies: HashMap<String, Proxy>) -> Self {
+    pub fn new(
+        id: String,
+        conversation_id: String,
+        proxies: HashMap<String, Proxy>,
+        store_id: String,
+    ) -> Self {
         ChatState {
             id,
             conversation_id: conversation_id.clone(),
             proxies,
-            messages: Vec::new(),
+            messages: HashMap::new(),
             settings: ConversationSettings::default(),
             subscriptions: Vec::new(),
+            store_id,
+            head: None,
         }
     }
 
@@ -219,12 +240,10 @@ impl ChatState {
         Ok(())
     }
 
-    pub fn generate_completion(&mut self) -> Result<Vec<Message>, String> {
+    pub fn generate_completion(&mut self) -> Result<String, String> {
         if self.messages.is_empty() {
             return Err("No messages in conversation".to_string());
         }
-
-        let mut new_messages = Vec::new();
 
         loop {
             // Generate a completion
@@ -232,13 +251,12 @@ impl ChatState {
                 .generate_proxy_completion(&self.settings.model_config.provider)
                 .expect("Error getting completion");
 
-            let msg = Message {
+            let message = Message {
                 role: "assistant".to_string(),
                 content: model_response.content.clone(),
             };
 
-            self.add_message(msg.clone());
-            new_messages.push(msg);
+            self.add_message(message.clone());
 
             match model_response.stop_reason {
                 StopReason::EndTurn => {
@@ -271,7 +289,7 @@ impl ChatState {
         }
 
         log("Generated completion successfully");
-        Ok(new_messages)
+        Ok(self.head.clone().unwrap())
     }
 
     pub fn get_tools(&self) -> Result<Option<Vec<Tool>>, String> {
@@ -428,11 +446,17 @@ impl ChatState {
     ) -> Result<CompletionResponse, String> {
         log(&format!("Sending request to proxy actor: {}", proxy_name));
 
+        let messages = self
+            .get_chain()
+            .into_iter()
+            .map(|m| m.message)
+            .collect::<Vec<_>>();
+
         // Create the Anthropic request
         let request = ProxyRequest::GenerateCompletion {
             request: CompletionRequest {
                 model: self.settings.model_config.model.clone(),
-                messages: self.messages.clone(),
+                messages,
                 temperature: self.settings.temperature,
                 max_tokens: self.settings.max_tokens,
                 disable_parallel_tool_use: None,
@@ -459,17 +483,62 @@ impl ChatState {
     }
 
     pub fn add_message(&mut self, message: Message) {
-        let msg_bytes = to_vec(&message).expect("Error serializing message for logging");
-
         log(&format!("Adding message: {:?}", message));
-        self.messages.push(message);
 
-        // Notify subscribers about the new message
+        let msg_bytes = to_vec(&message).expect("Error serializing message for logging");
+        let msg_ref = store::store(&self.store_id, &msg_bytes).expect("Error storing message");
+
+        let id = msg_ref.hash.clone();
+
+        let chat_msg = ChatMessage {
+            id: id.clone(),
+            parent_id: self.head.clone(),
+            message,
+        };
+
+        self.messages.insert(id.clone(), chat_msg);
+        self.head = Some(id.clone());
+
+        log(&format!("Updated head: {:?}", self.head));
+        self.notify_subscribers();
+    }
+
+    pub fn get_head(&self) -> Option<String> {
+        log("Getting head of conversation");
+        self.head.clone()
+    }
+
+    pub fn notify_subscribers(&self) {
+        log("Notifying subscribers");
+
+        let msg = to_vec(&self.head).expect("Error serializing message for logging");
+
         for subscriber in &self.subscriptions {
             log(&format!("Notifying subscriber: {}", subscriber));
-            message_server_host::send(subscriber, &msg_bytes)
+            message_server_host::send(subscriber, &msg)
                 .expect("Error sending message to subscriber");
         }
+    }
+
+    pub fn get_chain(&self) -> Vec<ChatMessage> {
+        let mut chain = Vec::new();
+
+        let mut current_id = self.head.clone();
+        while let Some(id) = current_id {
+            if let Some(message) = self.messages.get(&id) {
+                chain.push(message.clone());
+                current_id = message.parent_id.clone();
+            } else {
+                break;
+            }
+        }
+
+        chain
+    }
+
+    pub fn get_message(&self, id: &str) -> Option<&ChatMessage> {
+        log(&format!("Getting message with ID: {}", id));
+        self.messages.get(id)
     }
 
     /// Get conversation settings

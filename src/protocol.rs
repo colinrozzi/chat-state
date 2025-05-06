@@ -1,3 +1,4 @@
+use crate::state::ChatMessage;
 use genai_types::{Message, ModelInfo};
 use mcp_protocol::tool::Tool;
 use serde::{Deserialize, Serialize};
@@ -46,6 +47,10 @@ pub enum ChatStateRequest {
     UpdateSettings { settings: ConversationSettings },
     #[serde(rename = "get_history")]
     GetHistory,
+    #[serde(rename = "get_head")]
+    GetHead,
+    #[serde(rename = "get_message")]
+    GetMessage { message_id: String },
     #[serde(rename = "subscribe")]
     Subscribe { sub_id: String },
     #[serde(rename = "unsubscribe")]
@@ -63,14 +68,14 @@ pub enum ChatStateResponse {
     #[serde(rename = "success")]
     Success,
 
-    #[serde(rename = "message")]
-    Message { message: Message },
-
-    #[serde(rename = "completion")]
-    Completion { messages: Vec<Message> },
-
     #[serde(rename = "history")]
-    History { messages: Vec<Message> },
+    History { messages: Vec<ChatMessage> },
+
+    #[serde(rename = "head")]
+    Head { head: String },
+
+    #[serde(rename = "chat_message")]
+    ChatMessage { message: ChatMessage },
 
     #[serde(rename = "settings")]
     Settings { settings: ConversationSettings },

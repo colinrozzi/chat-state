@@ -7,9 +7,10 @@ use crate::bindings::exports::ntwk::theater::actor::Guest;
 use crate::bindings::exports::ntwk::theater::message_server_client::Guest as MessageServerClient;
 use crate::bindings::exports::ntwk::theater::supervisor_handlers::Guest as SupervisorHandlers;
 use crate::bindings::ntwk::theater::runtime::log;
+use crate::bindings::ntwk::theater::store::new;
 use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse};
 use crate::proxy::Proxy;
-use crate::state::ChatState;
+use crate::state::{ChatMessage, ChatState};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
@@ -17,6 +18,7 @@ use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct InitData {
+    store_id: Option<String>,
     conversation_id: String,
 }
 
@@ -49,7 +51,16 @@ impl Guest for Component {
                 .map_err(|e| format!("Error spawning google-proxy: {}", e))?;
                 proxies.insert("anthropic".to_string(), anthropic_proxy);
                 proxies.insert("google".to_string(), google_proxy);
-                ChatState::new(param, parsed_init_state.conversation_id, proxies)
+
+                let store_id = match parsed_init_state.store_id {
+                    Some(store_id) => store_id,
+                    None => {
+                        log("No store_id provided, creating a new store");
+                        new().map_err(|e| format!("Error creating new store: {}", e))?
+                    }
+                };
+
+                ChatState::new(param, parsed_init_state.conversation_id, proxies, store_id)
             }
             None => {
                 log("Chat state actor is not initialized");
@@ -113,19 +124,41 @@ impl MessageServerClient for Component {
         // Process request based on action
         let response = match request {
             ChatStateRequest::AddMessage { message } => {
-                chat_state.add_message(message.clone());
+                chat_state.add_message(message);
                 ChatStateResponse::Success
             }
             ChatStateRequest::GenerateCompletion => {
                 let response = chat_state.generate_completion();
                 match response {
-                    Ok(completion) => ChatStateResponse::Completion {
-                        messages: completion,
-                    },
+                    Ok(head) => ChatStateResponse::Head { head },
                     Err(e) => {
                         log(&format!("Error generating completion: {}", e));
                         create_error_response("completion_error", &e)
                     }
+                }
+            }
+            ChatStateRequest::GetHead => match chat_state.get_head() {
+                Some(head) => ChatStateResponse::Head { head },
+                None => ChatStateResponse::Error {
+                    error: protocol::ErrorInfo {
+                        code: "404".to_string(),
+                        details: None,
+                        message: "Head not set yet".to_string(),
+                    },
+                },
+            },
+            ChatStateRequest::GetMessage { message_id } => {
+                match chat_state.get_message(&message_id) {
+                    Some(message) => ChatStateResponse::ChatMessage {
+                        message: message.clone(),
+                    },
+                    None => ChatStateResponse::Error {
+                        error: protocol::ErrorInfo {
+                            code: "404".to_string(),
+                            details: None,
+                            message: "Message not found".to_string(),
+                        },
+                    },
                 }
             }
             ChatStateRequest::GetSettings => {
@@ -153,7 +186,7 @@ impl MessageServerClient for Component {
                 ChatStateResponse::Success
             }
             ChatStateRequest::GetHistory => ChatStateResponse::History {
-                messages: chat_state.messages.clone(),
+                messages: chat_state.get_chain(),
             },
             ChatStateRequest::ListModels => {
                 let models = chat_state.list_models();

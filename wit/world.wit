@@ -5,6 +5,7 @@ world chat-state {
     import timing;
     import supervisor;
     import message-server-host;
+    import store;
 
     export message-server-client;
     export supervisor-handlers;
