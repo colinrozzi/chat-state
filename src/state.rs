@@ -42,7 +42,7 @@ pub struct ChatState {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChatMessage {
-    pub id: String,
+    pub id: Option<String>,
     pub parent_id: Option<String>,
     pub message: Message,
 }
@@ -485,16 +485,18 @@ impl ChatState {
     pub fn add_message(&mut self, message: Message) {
         log(&format!("Adding message: {:?}", message));
 
-        let msg_bytes = to_vec(&message).expect("Error serializing message for logging");
+        let mut chat_msg = ChatMessage {
+            id: None,
+            parent_id: self.head.clone(),
+            message,
+        };
+
+        let msg_bytes = to_vec(&chat_msg).expect("Error serializing message for logging");
         let msg_ref = store::store(&self.store_id, &msg_bytes).expect("Error storing message");
 
         let id = msg_ref.hash.clone();
 
-        let chat_msg = ChatMessage {
-            id: id.clone(),
-            parent_id: self.head.clone(),
-            message,
-        };
+        chat_msg.id = Some(id.clone());
 
         self.messages.insert(id.clone(), chat_msg);
         self.head = Some(id.clone());
