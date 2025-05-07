@@ -10,7 +10,7 @@ use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::store::new;
 use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse};
 use crate::proxy::Proxy;
-use crate::state::{ChatMessage, ChatState};
+use crate::state::ChatState;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
@@ -271,7 +271,7 @@ impl SupervisorHandlers for Component {
         state: Option<bindings::exports::ntwk::theater::supervisor_handlers::Json>,
         _params: (
             String,
-            bindings::exports::ntwk::theater::supervisor_handlers::ActorError,
+            bindings::exports::ntwk::theater::supervisor_handlers::WitActorError,
         ),
     ) -> Result<(Option<bindings::exports::ntwk::theater::supervisor_handlers::Json>,), String>
     {

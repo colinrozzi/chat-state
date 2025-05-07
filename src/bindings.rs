@@ -202,58 +202,89 @@ pub mod ntwk {
                 }
             }
             /// Actor error
-            #[derive(Clone)]
-            pub enum ActorError {
-                OperationTimeout(u64),
+            #[repr(u8)]
+            #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+            pub enum WitErrorType {
+                OperationTimeout,
                 ChannelClosed,
                 ShuttingDown,
-                FunctionNotFound(_rt::String),
-                TypeMismatch(_rt::String),
-                Internal(ChainEvent),
+                FunctionNotFound,
+                TypeMismatch,
+                Internal,
                 SerializationError,
-                UpdateComponentError(_rt::String),
+                UpdateComponentError,
                 Paused,
             }
-            impl ::core::fmt::Debug for ActorError {
+            impl ::core::fmt::Debug for WitErrorType {
                 fn fmt(
                     &self,
                     f: &mut ::core::fmt::Formatter<'_>,
                 ) -> ::core::fmt::Result {
                     match self {
-                        ActorError::OperationTimeout(e) => {
-                            f.debug_tuple("ActorError::OperationTimeout")
-                                .field(e)
-                                .finish()
+                        WitErrorType::OperationTimeout => {
+                            f.debug_tuple("WitErrorType::OperationTimeout").finish()
                         }
-                        ActorError::ChannelClosed => {
-                            f.debug_tuple("ActorError::ChannelClosed").finish()
+                        WitErrorType::ChannelClosed => {
+                            f.debug_tuple("WitErrorType::ChannelClosed").finish()
                         }
-                        ActorError::ShuttingDown => {
-                            f.debug_tuple("ActorError::ShuttingDown").finish()
+                        WitErrorType::ShuttingDown => {
+                            f.debug_tuple("WitErrorType::ShuttingDown").finish()
                         }
-                        ActorError::FunctionNotFound(e) => {
-                            f.debug_tuple("ActorError::FunctionNotFound")
-                                .field(e)
-                                .finish()
+                        WitErrorType::FunctionNotFound => {
+                            f.debug_tuple("WitErrorType::FunctionNotFound").finish()
                         }
-                        ActorError::TypeMismatch(e) => {
-                            f.debug_tuple("ActorError::TypeMismatch").field(e).finish()
+                        WitErrorType::TypeMismatch => {
+                            f.debug_tuple("WitErrorType::TypeMismatch").finish()
                         }
-                        ActorError::Internal(e) => {
-                            f.debug_tuple("ActorError::Internal").field(e).finish()
+                        WitErrorType::Internal => {
+                            f.debug_tuple("WitErrorType::Internal").finish()
                         }
-                        ActorError::SerializationError => {
-                            f.debug_tuple("ActorError::SerializationError").finish()
+                        WitErrorType::SerializationError => {
+                            f.debug_tuple("WitErrorType::SerializationError").finish()
                         }
-                        ActorError::UpdateComponentError(e) => {
-                            f.debug_tuple("ActorError::UpdateComponentError")
-                                .field(e)
-                                .finish()
+                        WitErrorType::UpdateComponentError => {
+                            f.debug_tuple("WitErrorType::UpdateComponentError").finish()
                         }
-                        ActorError::Paused => {
-                            f.debug_tuple("ActorError::Paused").finish()
+                        WitErrorType::Paused => {
+                            f.debug_tuple("WitErrorType::Paused").finish()
                         }
                     }
+                }
+            }
+            impl WitErrorType {
+                #[doc(hidden)]
+                pub unsafe fn _lift(val: u8) -> WitErrorType {
+                    if !cfg!(debug_assertions) {
+                        return ::core::mem::transmute(val);
+                    }
+                    match val {
+                        0 => WitErrorType::OperationTimeout,
+                        1 => WitErrorType::ChannelClosed,
+                        2 => WitErrorType::ShuttingDown,
+                        3 => WitErrorType::FunctionNotFound,
+                        4 => WitErrorType::TypeMismatch,
+                        5 => WitErrorType::Internal,
+                        6 => WitErrorType::SerializationError,
+                        7 => WitErrorType::UpdateComponentError,
+                        8 => WitErrorType::Paused,
+                        _ => panic!("invalid enum discriminant"),
+                    }
+                }
+            }
+            #[derive(Clone)]
+            pub struct WitActorError {
+                pub error_type: WitErrorType,
+                pub data: Option<_rt::Vec<u8>>,
+            }
+            impl ::core::fmt::Debug for WitActorError {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    f.debug_struct("WitActorError")
+                        .field("error-type", &self.error_type)
+                        .field("data", &self.data)
+                        .finish()
                 }
             }
         }
@@ -5105,7 +5136,7 @@ pub mod exports {
                 static __FORCE_SECTION_REF: fn() = super::super::super::super::__link_custom_section_describing_imports;
                 use super::super::super::super::_rt;
                 pub type Json = super::super::super::super::ntwk::theater::types::Json;
-                pub type ActorError = super::super::super::super::ntwk::theater::types::ActorError;
+                pub type WitActorError = super::super::super::super::ntwk::theater::types::WitActorError;
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
                 pub unsafe fn _export_handle_child_error_cabi<T: Guest>(
@@ -5115,105 +5146,14 @@ pub mod exports {
                     arg3: *mut u8,
                     arg4: usize,
                     arg5: i32,
-                    arg6: ::core::mem::MaybeUninit<u64>,
-                    arg7: usize,
-                    arg8: i32,
-                    arg9: *mut u8,
-                    arg10: usize,
-                    arg11: *mut u8,
-                    arg12: usize,
-                    arg13: *mut u8,
-                    arg14: usize,
-                    arg15: i64,
+                    arg6: i32,
+                    arg7: *mut u8,
+                    arg8: usize,
                 ) -> *mut u8 {
                     #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
                     let len1 = arg4;
                     let bytes1 = _rt::Vec::from_raw_parts(arg3.cast(), len1, len1);
-                    use super::super::super::super::ntwk::theater::types::ActorError as V9;
-                    let v9 = match arg5 {
-                        0 => {
-                            let e9 = arg6.assume_init() as i64 as u64;
-                            V9::OperationTimeout(e9)
-                        }
-                        1 => V9::ChannelClosed,
-                        2 => V9::ShuttingDown,
-                        3 => {
-                            let e9 = {
-                                let len2 = arg7;
-                                let bytes2 = _rt::Vec::from_raw_parts(
-                                    arg6.as_ptr().cast::<*mut u8>().read().cast(),
-                                    len2,
-                                    len2,
-                                );
-                                _rt::string_lift(bytes2)
-                            };
-                            V9::FunctionNotFound(e9)
-                        }
-                        4 => {
-                            let e9 = {
-                                let len3 = arg7;
-                                let bytes3 = _rt::Vec::from_raw_parts(
-                                    arg6.as_ptr().cast::<*mut u8>().read().cast(),
-                                    len3,
-                                    len3,
-                                );
-                                _rt::string_lift(bytes3)
-                            };
-                            V9::TypeMismatch(e9)
-                        }
-                        5 => {
-                            let e9 = {
-                                let len4 = arg7;
-                                let len6 = arg12;
-                                let bytes6 = _rt::Vec::from_raw_parts(
-                                    arg11.cast(),
-                                    len6,
-                                    len6,
-                                );
-                                let len7 = arg14;
-                                super::super::super::super::ntwk::theater::types::ChainEvent {
-                                    hash: _rt::Vec::from_raw_parts(
-                                        arg6.as_ptr().cast::<*mut u8>().read().cast(),
-                                        len4,
-                                        len4,
-                                    ),
-                                    parent_hash: match arg8 {
-                                        0 => None,
-                                        1 => {
-                                            let e = {
-                                                let len5 = arg10;
-                                                _rt::Vec::from_raw_parts(arg9.cast(), len5, len5)
-                                            };
-                                            Some(e)
-                                        }
-                                        _ => _rt::invalid_enum_discriminant(),
-                                    },
-                                    event_type: _rt::string_lift(bytes6),
-                                    data: _rt::Vec::from_raw_parts(arg13.cast(), len7, len7),
-                                    timestamp: arg15 as u64,
-                                }
-                            };
-                            V9::Internal(e9)
-                        }
-                        6 => V9::SerializationError,
-                        7 => {
-                            let e9 = {
-                                let len8 = arg7;
-                                let bytes8 = _rt::Vec::from_raw_parts(
-                                    arg6.as_ptr().cast::<*mut u8>().read().cast(),
-                                    len8,
-                                    len8,
-                                );
-                                _rt::string_lift(bytes8)
-                            };
-                            V9::UpdateComponentError(e9)
-                        }
-                        n => {
-                            debug_assert_eq!(n, 8, "invalid enum discriminant");
-                            V9::Paused
-                        }
-                    };
-                    let result10 = T::handle_child_error(
+                    let result3 = T::handle_child_error(
                         match arg0 {
                             0 => None,
                             1 => {
@@ -5225,51 +5165,69 @@ pub mod exports {
                             }
                             _ => _rt::invalid_enum_discriminant(),
                         },
-                        (_rt::string_lift(bytes1), v9),
+                        (
+                            _rt::string_lift(bytes1),
+                            super::super::super::super::ntwk::theater::types::WitActorError {
+                                error_type: super::super::super::super::ntwk::theater::types::WitErrorType::_lift(
+                                    arg5 as u8,
+                                ),
+                                data: match arg6 {
+                                    0 => None,
+                                    1 => {
+                                        let e = {
+                                            let len2 = arg8;
+                                            _rt::Vec::from_raw_parts(arg7.cast(), len2, len2)
+                                        };
+                                        Some(e)
+                                    }
+                                    _ => _rt::invalid_enum_discriminant(),
+                                },
+                            },
+                        ),
                     );
-                    let ptr11 = (&raw mut _RET_AREA.0).cast::<u8>();
-                    match result10 {
+                    let ptr4 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    match result3 {
                         Ok(e) => {
-                            *ptr11.add(0).cast::<u8>() = (0i32) as u8;
-                            let (t12_0,) = e;
-                            match t12_0 {
+                            *ptr4.add(0).cast::<u8>() = (0i32) as u8;
+                            let (t5_0,) = e;
+                            match t5_0 {
                                 Some(e) => {
-                                    *ptr11
+                                    *ptr4
                                         .add(::core::mem::size_of::<*const u8>())
                                         .cast::<u8>() = (1i32) as u8;
-                                    let vec13 = (e).into_boxed_slice();
-                                    let ptr13 = vec13.as_ptr().cast::<u8>();
-                                    let len13 = vec13.len();
-                                    ::core::mem::forget(vec13);
-                                    *ptr11
+                                    let vec6 = (e).into_boxed_slice();
+                                    let ptr6 = vec6.as_ptr().cast::<u8>();
+                                    let len6 = vec6.len();
+                                    ::core::mem::forget(vec6);
+                                    *ptr4
                                         .add(3 * ::core::mem::size_of::<*const u8>())
-                                        .cast::<usize>() = len13;
-                                    *ptr11
+                                        .cast::<usize>() = len6;
+                                    *ptr4
                                         .add(2 * ::core::mem::size_of::<*const u8>())
-                                        .cast::<*mut u8>() = ptr13.cast_mut();
+                                        .cast::<*mut u8>() = ptr6.cast_mut();
                                 }
                                 None => {
-                                    *ptr11
+                                    *ptr4
                                         .add(::core::mem::size_of::<*const u8>())
                                         .cast::<u8>() = (0i32) as u8;
                                 }
                             };
                         }
                         Err(e) => {
-                            *ptr11.add(0).cast::<u8>() = (1i32) as u8;
-                            let vec14 = (e.into_bytes()).into_boxed_slice();
-                            let ptr14 = vec14.as_ptr().cast::<u8>();
-                            let len14 = vec14.len();
-                            ::core::mem::forget(vec14);
-                            *ptr11
+                            *ptr4.add(0).cast::<u8>() = (1i32) as u8;
+                            let vec7 = (e.into_bytes()).into_boxed_slice();
+                            let ptr7 = vec7.as_ptr().cast::<u8>();
+                            let len7 = vec7.len();
+                            ::core::mem::forget(vec7);
+                            *ptr4
                                 .add(2 * ::core::mem::size_of::<*const u8>())
-                                .cast::<usize>() = len14;
-                            *ptr11
+                                .cast::<usize>() = len7;
+                            *ptr4
                                 .add(::core::mem::size_of::<*const u8>())
-                                .cast::<*mut u8>() = ptr14.cast_mut();
+                                .cast::<*mut u8>() = ptr7.cast_mut();
                         }
                     };
-                    ptr11
+                    ptr4
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
@@ -5322,7 +5280,7 @@ pub mod exports {
                     /// * `Err(string)` - Error message if handling fails
                     fn handle_child_error(
                         state: Option<Json>,
-                        params: (_rt::String, ActorError),
+                        params: (_rt::String, WitActorError),
                     ) -> Result<(Option<Json>,), _rt::String>;
                 }
                 #[doc(hidden)]
@@ -5332,13 +5290,10 @@ pub mod exports {
                         "ntwk:theater/supervisor-handlers#handle-child-error")] unsafe
                         extern "C" fn export_handle_child_error(arg0 : i32, arg1 : * mut
                         u8, arg2 : usize, arg3 : * mut u8, arg4 : usize, arg5 : i32, arg6
-                        : ::core::mem::MaybeUninit::< u64 >, arg7 : usize, arg8 : i32,
-                        arg9 : * mut u8, arg10 : usize, arg11 : * mut u8, arg12 : usize,
-                        arg13 : * mut u8, arg14 : usize, arg15 : i64,) -> * mut u8 {
-                        unsafe { $($path_to_types)*::
-                        _export_handle_child_error_cabi::<$ty > (arg0, arg1, arg2, arg3,
-                        arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13,
-                        arg14, arg15) } } #[unsafe (export_name =
+                        : i32, arg7 : * mut u8, arg8 : usize,) -> * mut u8 { unsafe {
+                        $($path_to_types)*:: _export_handle_child_error_cabi::<$ty >
+                        (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) } }
+                        #[unsafe (export_name =
                         "cabi_post_ntwk:theater/supervisor-handlers#handle-child-error")]
                         unsafe extern "C" fn _post_return_handle_child_error(arg0 : * mut
                         u8,) { unsafe { $($path_to_types)*::
@@ -5708,76 +5663,77 @@ pub(crate) use __export_chat_state_impl as export;
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 2908] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xdb\x15\x01A\x02\x01\
-A\x1b\x01B\x19\x01p}\x04\0\x04json\x03\0\0\x01p}\x01k\x02\x04\0\x05state\x03\0\x03\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 2938] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xf9\x15\x01A\x02\x01\
+A\x1b\x01B\x1b\x01p}\x04\0\x04json\x03\0\0\x01p}\x01k\x02\x04\0\x05state\x03\0\x03\
 \x01s\x04\0\x08actor-id\x03\0\x05\x01s\x04\0\x0achannel-id\x03\0\x07\x01k\x01\x01\
 r\x02\x08accepted\x7f\x07message\x09\x04\0\x0echannel-accept\x03\0\x0a\x01kw\x01\
 r\x03\x0aevent-types\x06parent\x0c\x04data\x01\x04\0\x05event\x03\0\x0d\x01r\x02\
 \x04hashw\x05event\x0e\x04\0\x0ameta-event\x03\0\x0f\x01p\x10\x01r\x01\x06events\
 \x11\x04\0\x05chain\x03\0\x12\x01k\x02\x01r\x05\x04hash\x02\x0bparent-hash\x14\x0a\
-event-types\x04data\x02\x09timestampw\x04\0\x0bchain-event\x03\0\x15\x01q\x09\x11\
-operation-timeout\x01w\0\x0echannel-closed\0\0\x0dshutting-down\0\0\x12function-\
-not-found\x01s\0\x0dtype-mismatch\x01s\0\x08internal\x01\x16\0\x13serialization-\
-error\0\0\x16update-component-error\x01s\0\x06paused\0\0\x04\0\x0bactor-error\x03\
-\0\x17\x03\0\x12ntwk:theater/types\x05\0\x02\x03\0\0\x04json\x02\x03\0\0\x05chai\
-n\x02\x03\0\0\x08actor-id\x01B\x0a\x02\x03\x02\x01\x01\x04\0\x04json\x03\0\0\x02\
-\x03\x02\x01\x02\x04\0\x05chain\x03\0\x02\x02\x03\x02\x01\x03\x04\0\x08actor-id\x03\
-\0\x04\x01@\x01\x03msgs\x01\0\x04\0\x03log\x01\x06\x01@\0\0\x03\x04\0\x09get-cha\
-in\x01\x07\x03\0\x14ntwk:theater/runtime\x05\x04\x01B\x07\x01@\0\0w\x04\0\x03now\
-\x01\0\x01j\0\x01s\x01@\x01\x08durationw\0\x01\x04\0\x05sleep\x01\x02\x01@\x01\x09\
-timestampw\0\x01\x04\0\x08deadline\x01\x03\x03\0\x13ntwk:theater/timing\x05\x05\x02\
-\x03\0\0\x0bchain-event\x01B\x17\x02\x03\x02\x01\x06\x04\0\x0bchain-event\x03\0\0\
-\x01p}\x01k\x02\x01j\x01s\x01s\x01@\x02\x08manifests\x0ainit-bytes\x03\0\x04\x04\
-\0\x05spawn\x01\x05\x01@\x02\x08manifests\x0ainit-state\x03\0\x04\x04\0\x06resum\
-e\x01\x06\x01ps\x01@\0\0\x07\x04\0\x0dlist-children\x01\x08\x01j\0\x01s\x01@\x01\
-\x08child-ids\0\x09\x04\0\x0astop-child\x01\x0a\x04\0\x0drestart-child\x01\x0a\x01\
-j\x01\x03\x01s\x01@\x01\x08child-ids\0\x0b\x04\0\x0fget-child-state\x01\x0c\x01p\
-\x01\x01j\x01\x0d\x01s\x01@\x01\x08child-ids\0\x0e\x04\0\x10get-child-events\x01\
-\x0f\x03\0\x17ntwk:theater/supervisor\x05\x07\x02\x03\0\0\x0achannel-id\x01B\x1a\
-\x02\x03\x02\x01\x01\x04\0\x04json\x03\0\0\x02\x03\x02\x01\x03\x04\0\x08actor-id\
-\x03\0\x02\x02\x03\x02\x01\x08\x04\0\x0achannel-id\x03\0\x04\x01j\0\x01s\x01@\x02\
-\x08actor-id\x03\x03msg\x01\0\x06\x04\0\x04send\x01\x07\x01j\x01\x01\x01s\x01@\x02\
-\x08actor-id\x03\x03msg\x01\0\x08\x04\0\x07request\x01\x09\x01j\x01\x05\x01s\x01\
-@\x02\x08actor-id\x03\x0binitial-msg\x01\0\x0a\x04\0\x0copen-channel\x01\x0b\x01\
-@\x02\x0achannel-id\x05\x03msg\x01\0\x06\x04\0\x0fsend-on-channel\x01\x0c\x01@\x01\
-\x0achannel-id\x05\0\x06\x04\0\x0dclose-channel\x01\x0d\x01ps\x01@\0\0\x0e\x04\0\
-\x19list-outstanding-requests\x01\x0f\x01@\x02\x0arequest-ids\x08response\x01\0\x06\
-\x04\0\x12respond-to-request\x01\x10\x01@\x01\x0arequest-ids\0\x06\x04\0\x0ecanc\
-el-request\x01\x11\x03\0\x20ntwk:theater/message-server-host\x05\x09\x01B(\x01r\x01\
-\x04hashs\x04\0\x0bcontent-ref\x03\0\0\x01j\x01s\x01s\x01@\0\0\x02\x04\0\x03new\x01\
-\x03\x01p}\x01j\x01\x01\x01s\x01@\x02\x08store-ids\x07content\x04\0\x05\x04\0\x05\
-store\x01\x06\x01j\x01\x04\x01s\x01@\x02\x08store-ids\x0bcontent-ref\x01\0\x07\x04\
-\0\x03get\x01\x08\x01j\x01\x7f\x01s\x01@\x02\x08store-ids\x0bcontent-ref\x01\0\x09\
-\x04\0\x06exists\x01\x0a\x01j\0\x01s\x01@\x03\x08store-ids\x05labels\x0bcontent-\
-ref\x01\0\x0b\x04\0\x05label\x01\x0c\x01k\x01\x01j\x01\x0d\x01s\x01@\x02\x08stor\
-e-ids\x05labels\0\x0e\x04\0\x0cget-by-label\x01\x0f\x01@\x02\x08store-ids\x05lab\
-els\0\x0b\x04\0\x0cremove-label\x01\x10\x04\0\x11remove-from-label\x01\x0c\x01@\x03\
-\x08store-ids\x05labels\x07content\x04\0\x05\x04\0\x0estore-at-label\x01\x11\x04\
-\0\x18replace-content-at-label\x01\x11\x04\0\x10replace-at-label\x01\x0c\x01ps\x01\
-j\x01\x12\x01s\x01@\x01\x08store-ids\0\x13\x04\0\x0blist-labels\x01\x14\x01p\x01\
-\x01j\x01\x15\x01s\x01@\x01\x08store-ids\0\x16\x04\0\x10list-all-content\x01\x17\
-\x01j\x01w\x01s\x01@\x01\x08store-ids\0\x18\x04\0\x14calculate-total-size\x01\x19\
-\x03\0\x12ntwk:theater/store\x05\x0a\x02\x03\0\0\x05event\x02\x03\0\0\x0echannel\
--accept\x01B\x1e\x02\x03\x02\x01\x01\x04\0\x04json\x03\0\0\x02\x03\x02\x01\x0b\x04\
-\0\x05event\x03\0\x02\x02\x03\x02\x01\x08\x04\0\x0achannel-id\x03\0\x04\x02\x03\x02\
-\x01\x0c\x04\0\x0echannel-accept\x03\0\x06\x01k\x01\x01o\x01\x01\x01o\x01\x08\x01\
-j\x01\x0a\x01s\x01@\x02\x05state\x08\x06params\x09\0\x0b\x04\0\x0bhandle-send\x01\
-\x0c\x01o\x02s\x01\x01o\x02\x08\x0a\x01j\x01\x0e\x01s\x01@\x02\x05state\x08\x06p\
-arams\x0d\0\x0f\x04\0\x0ehandle-request\x01\x10\x01o\x01\x07\x01o\x02\x08\x11\x01\
-j\x01\x12\x01s\x01@\x02\x05state\x08\x06params\x09\0\x13\x04\0\x13handle-channel\
--open\x01\x14\x01o\x02\x05\x01\x01@\x02\x05state\x08\x06params\x15\0\x0b\x04\0\x16\
-handle-channel-message\x01\x16\x01o\x01\x05\x01@\x02\x05state\x08\x06params\x17\0\
-\x0b\x04\0\x14handle-channel-close\x01\x18\x04\0\"ntwk:theater/message-server-cl\
-ient\x05\x0d\x02\x03\0\0\x0bactor-error\x01B\x0a\x02\x03\x02\x01\x01\x04\0\x04js\
-on\x03\0\0\x02\x03\x02\x01\x0e\x04\0\x0bactor-error\x03\0\x02\x01k\x01\x01o\x02s\
-\x03\x01o\x01\x04\x01j\x01\x06\x01s\x01@\x02\x05state\x04\x06params\x05\0\x07\x04\
-\0\x12handle-child-error\x01\x08\x04\0\x20ntwk:theater/supervisor-handlers\x05\x0f\
-\x02\x03\0\0\x05state\x01B\x07\x02\x03\x02\x01\x10\x04\0\x05state\x03\0\0\x01o\x01\
-s\x01o\x01\x01\x01j\x01\x03\x01s\x01@\x02\x05state\x01\x06params\x02\0\x04\x04\0\
-\x04init\x01\x05\x04\0\x12ntwk:theater/actor\x05\x11\x04\0\x17ntwk:theater/chat-\
-state\x04\0\x0b\x10\x01\0\x0achat-state\x03\0\0\0G\x09producers\x01\x0cprocessed\
--by\x02\x0dwit-component\x070.227.1\x10wit-bindgen-rust\x060.41.0";
+event-types\x04data\x02\x09timestampw\x04\0\x0bchain-event\x03\0\x15\x01m\x09\x11\
+operation-timeout\x0echannel-closed\x0dshutting-down\x12function-not-found\x0dty\
+pe-mismatch\x08internal\x13serialization-error\x16update-component-error\x06paus\
+ed\x04\0\x0ewit-error-type\x03\0\x17\x01r\x02\x0aerror-type\x18\x04data\x14\x04\0\
+\x0fwit-actor-error\x03\0\x19\x03\0\x12ntwk:theater/types\x05\0\x02\x03\0\0\x04j\
+son\x02\x03\0\0\x05chain\x02\x03\0\0\x08actor-id\x01B\x0a\x02\x03\x02\x01\x01\x04\
+\0\x04json\x03\0\0\x02\x03\x02\x01\x02\x04\0\x05chain\x03\0\x02\x02\x03\x02\x01\x03\
+\x04\0\x08actor-id\x03\0\x04\x01@\x01\x03msgs\x01\0\x04\0\x03log\x01\x06\x01@\0\0\
+\x03\x04\0\x09get-chain\x01\x07\x03\0\x14ntwk:theater/runtime\x05\x04\x01B\x07\x01\
+@\0\0w\x04\0\x03now\x01\0\x01j\0\x01s\x01@\x01\x08durationw\0\x01\x04\0\x05sleep\
+\x01\x02\x01@\x01\x09timestampw\0\x01\x04\0\x08deadline\x01\x03\x03\0\x13ntwk:th\
+eater/timing\x05\x05\x02\x03\0\0\x0bchain-event\x01B\x17\x02\x03\x02\x01\x06\x04\
+\0\x0bchain-event\x03\0\0\x01p}\x01k\x02\x01j\x01s\x01s\x01@\x02\x08manifests\x0a\
+init-bytes\x03\0\x04\x04\0\x05spawn\x01\x05\x01@\x02\x08manifests\x0ainit-state\x03\
+\0\x04\x04\0\x06resume\x01\x06\x01ps\x01@\0\0\x07\x04\0\x0dlist-children\x01\x08\
+\x01j\0\x01s\x01@\x01\x08child-ids\0\x09\x04\0\x0astop-child\x01\x0a\x04\0\x0dre\
+start-child\x01\x0a\x01j\x01\x03\x01s\x01@\x01\x08child-ids\0\x0b\x04\0\x0fget-c\
+hild-state\x01\x0c\x01p\x01\x01j\x01\x0d\x01s\x01@\x01\x08child-ids\0\x0e\x04\0\x10\
+get-child-events\x01\x0f\x03\0\x17ntwk:theater/supervisor\x05\x07\x02\x03\0\0\x0a\
+channel-id\x01B\x1a\x02\x03\x02\x01\x01\x04\0\x04json\x03\0\0\x02\x03\x02\x01\x03\
+\x04\0\x08actor-id\x03\0\x02\x02\x03\x02\x01\x08\x04\0\x0achannel-id\x03\0\x04\x01\
+j\0\x01s\x01@\x02\x08actor-id\x03\x03msg\x01\0\x06\x04\0\x04send\x01\x07\x01j\x01\
+\x01\x01s\x01@\x02\x08actor-id\x03\x03msg\x01\0\x08\x04\0\x07request\x01\x09\x01\
+j\x01\x05\x01s\x01@\x02\x08actor-id\x03\x0binitial-msg\x01\0\x0a\x04\0\x0copen-c\
+hannel\x01\x0b\x01@\x02\x0achannel-id\x05\x03msg\x01\0\x06\x04\0\x0fsend-on-chan\
+nel\x01\x0c\x01@\x01\x0achannel-id\x05\0\x06\x04\0\x0dclose-channel\x01\x0d\x01p\
+s\x01@\0\0\x0e\x04\0\x19list-outstanding-requests\x01\x0f\x01@\x02\x0arequest-id\
+s\x08response\x01\0\x06\x04\0\x12respond-to-request\x01\x10\x01@\x01\x0arequest-\
+ids\0\x06\x04\0\x0ecancel-request\x01\x11\x03\0\x20ntwk:theater/message-server-h\
+ost\x05\x09\x01B(\x01r\x01\x04hashs\x04\0\x0bcontent-ref\x03\0\0\x01j\x01s\x01s\x01\
+@\0\0\x02\x04\0\x03new\x01\x03\x01p}\x01j\x01\x01\x01s\x01@\x02\x08store-ids\x07\
+content\x04\0\x05\x04\0\x05store\x01\x06\x01j\x01\x04\x01s\x01@\x02\x08store-ids\
+\x0bcontent-ref\x01\0\x07\x04\0\x03get\x01\x08\x01j\x01\x7f\x01s\x01@\x02\x08sto\
+re-ids\x0bcontent-ref\x01\0\x09\x04\0\x06exists\x01\x0a\x01j\0\x01s\x01@\x03\x08\
+store-ids\x05labels\x0bcontent-ref\x01\0\x0b\x04\0\x05label\x01\x0c\x01k\x01\x01\
+j\x01\x0d\x01s\x01@\x02\x08store-ids\x05labels\0\x0e\x04\0\x0cget-by-label\x01\x0f\
+\x01@\x02\x08store-ids\x05labels\0\x0b\x04\0\x0cremove-label\x01\x10\x04\0\x11re\
+move-from-label\x01\x0c\x01@\x03\x08store-ids\x05labels\x07content\x04\0\x05\x04\
+\0\x0estore-at-label\x01\x11\x04\0\x18replace-content-at-label\x01\x11\x04\0\x10\
+replace-at-label\x01\x0c\x01ps\x01j\x01\x12\x01s\x01@\x01\x08store-ids\0\x13\x04\
+\0\x0blist-labels\x01\x14\x01p\x01\x01j\x01\x15\x01s\x01@\x01\x08store-ids\0\x16\
+\x04\0\x10list-all-content\x01\x17\x01j\x01w\x01s\x01@\x01\x08store-ids\0\x18\x04\
+\0\x14calculate-total-size\x01\x19\x03\0\x12ntwk:theater/store\x05\x0a\x02\x03\0\
+\0\x05event\x02\x03\0\0\x0echannel-accept\x01B\x1e\x02\x03\x02\x01\x01\x04\0\x04\
+json\x03\0\0\x02\x03\x02\x01\x0b\x04\0\x05event\x03\0\x02\x02\x03\x02\x01\x08\x04\
+\0\x0achannel-id\x03\0\x04\x02\x03\x02\x01\x0c\x04\0\x0echannel-accept\x03\0\x06\
+\x01k\x01\x01o\x01\x01\x01o\x01\x08\x01j\x01\x0a\x01s\x01@\x02\x05state\x08\x06p\
+arams\x09\0\x0b\x04\0\x0bhandle-send\x01\x0c\x01o\x02s\x01\x01o\x02\x08\x0a\x01j\
+\x01\x0e\x01s\x01@\x02\x05state\x08\x06params\x0d\0\x0f\x04\0\x0ehandle-request\x01\
+\x10\x01o\x01\x07\x01o\x02\x08\x11\x01j\x01\x12\x01s\x01@\x02\x05state\x08\x06pa\
+rams\x09\0\x13\x04\0\x13handle-channel-open\x01\x14\x01o\x02\x05\x01\x01@\x02\x05\
+state\x08\x06params\x15\0\x0b\x04\0\x16handle-channel-message\x01\x16\x01o\x01\x05\
+\x01@\x02\x05state\x08\x06params\x17\0\x0b\x04\0\x14handle-channel-close\x01\x18\
+\x04\0\"ntwk:theater/message-server-client\x05\x0d\x02\x03\0\0\x0fwit-actor-erro\
+r\x01B\x0a\x02\x03\x02\x01\x01\x04\0\x04json\x03\0\0\x02\x03\x02\x01\x0e\x04\0\x0f\
+wit-actor-error\x03\0\x02\x01k\x01\x01o\x02s\x03\x01o\x01\x04\x01j\x01\x06\x01s\x01\
+@\x02\x05state\x04\x06params\x05\0\x07\x04\0\x12handle-child-error\x01\x08\x04\0\
+\x20ntwk:theater/supervisor-handlers\x05\x0f\x02\x03\0\0\x05state\x01B\x07\x02\x03\
+\x02\x01\x10\x04\0\x05state\x03\0\0\x01o\x01s\x01o\x01\x01\x01j\x01\x03\x01s\x01\
+@\x02\x05state\x01\x06params\x02\0\x04\x04\0\x04init\x01\x05\x04\0\x12ntwk:theat\
+er/actor\x05\x11\x04\0\x17ntwk:theater/chat-state\x04\0\x0b\x10\x01\0\x0achat-st\
+ate\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.1\x10\
+wit-bindgen-rust\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {
