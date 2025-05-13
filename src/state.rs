@@ -65,9 +65,6 @@ pub struct ConversationSettings {
     /// Maximum tokens to generate
     pub max_tokens: u32,
 
-    /// Any additional model parameters
-    pub additional_params: Option<HashMap<String, serde_json::Value>>,
-
     /// System prompt to use
     pub system_prompt: Option<String>,
 
@@ -87,7 +84,6 @@ impl Default for ConversationSettings {
             },
             temperature: None,
             max_tokens: 65535,
-            additional_params: None,
             system_prompt: None,
             title: "title".to_string(),
             mcp_servers: vec![McpServer {
