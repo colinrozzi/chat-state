@@ -114,13 +114,18 @@
 
           installPhase = ''
             mkdir -p $out/lib
-            
-            # Install WebAssembly files - transform hyphens to underscores in source file name
-            echo "Copying WebAssembly file to $out/lib"
-            echo "Looking for: ./target/wasm32-unknown-unknown/release/$(echo chat-state | tr '-' '_').wasm"
-            echo "LS: $(ls ./target/wasm32-unknown-unknown/release)"
-            SOURCE_FILE="./target/wasm32-unknown-unknown/release/$(echo chat-state | tr '-' '_').wasm"
-            cp $SOURCE_FILE $out/lib/chat-state.wasm
+
+            wasmFile=$(ls target/wasm32-unknown-unknown/release/*.wasm)
+            if [ -z "$wasmFile" ]; then
+              echo "Error: No .wasm file found in target/wasm32-unknown-unknown/release/"
+              exit 1
+            fi
+            # Ensure there is only one .wasm file
+            if [ $(echo $wasmFile | wc -w) -ne 1 ]; then
+              echo "Error: More than one .wasm file found in target/wasm32-unknown-unknown/release/"
+              exit 1
+            fi
+            cp $wasmFile $out/lib/component.wasm
           '';
           
           # No longer need network access during build

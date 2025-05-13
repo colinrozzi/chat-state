@@ -130,35 +130,32 @@ impl MessageServerClient for Component {
             ChatStateRequest::GenerateCompletion => {
                 let response = chat_state.generate_completion();
                 match response {
-                    Ok(head) => ChatStateResponse::Head { head },
+                    Ok(head) => ChatStateResponse::Head { head: Some(head) },
                     Err(e) => {
                         log(&format!("Error generating completion: {}", e));
                         create_error_response("completion_error", &e)
                     }
                 }
             }
-            ChatStateRequest::GetHead => match chat_state.get_head() {
-                Some(head) => ChatStateResponse::Head { head },
-                None => ChatStateResponse::Error {
-                    error: protocol::ErrorInfo {
-                        code: "404".to_string(),
-                        details: None,
-                        message: "Head not set yet".to_string(),
-                    },
-                },
+            ChatStateRequest::GetHead => ChatStateResponse::Head {
+                head: chat_state.get_head(),
             },
             ChatStateRequest::GetMessage { message_id } => {
                 match chat_state.get_message(&message_id) {
-                    Some(message) => ChatStateResponse::ChatMessage {
+                    Ok(Some(message)) => ChatStateResponse::ChatMessage {
                         message: message.clone(),
                     },
-                    None => ChatStateResponse::Error {
+                    Ok(None) => ChatStateResponse::Error {
                         error: protocol::ErrorInfo {
                             code: "404".to_string(),
                             details: None,
                             message: "Message not found".to_string(),
                         },
                     },
+                    Err(e) => {
+                        log(&format!("Error getting message: {}", e));
+                        create_error_response("message_error", &e)
+                    }
                 }
             }
             ChatStateRequest::GetSettings => {

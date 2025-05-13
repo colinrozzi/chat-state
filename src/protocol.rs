@@ -72,7 +72,7 @@ pub enum ChatStateResponse {
     History { messages: Vec<ChatMessage> },
 
     #[serde(rename = "head")]
-    Head { head: String },
+    Head { head: Option<String> },
 
     #[serde(rename = "chat_message")]
     ChatMessage { message: ChatMessage },

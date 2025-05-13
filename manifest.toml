@@ -1,5 +1,5 @@
 name = "chat-state"
-component_path = "/nix/store/jk8pwijsdiz910avign3fzlx225ssbj5-chat-state-0.1.0/lib/chat-state.wasm"
+component_path = "/nix/store/php4g2y354z9z1i4qbqql4vck03qkhib-chat-state-0.1.0/lib/component.wasm"
 short_description = "Actor that manages state and behavior of conversations in the Claude Chat system"
 init_state = "/Users/colinrozzi/work/actor-registry/chat-state/init.json"
 

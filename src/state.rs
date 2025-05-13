@@ -1,6 +1,6 @@
 use crate::bindings::ntwk::theater::message_server_host;
 use crate::bindings::ntwk::theater::runtime::log;
-use crate::bindings::ntwk::theater::store;
+use crate::bindings::ntwk::theater::store::{self, ContentRef};
 use crate::bindings::ntwk::theater::supervisor::spawn;
 use crate::protocol::{McpActorRequest, McpResponse};
 use crate::proxy::Proxy;
@@ -86,7 +86,7 @@ impl Default for ConversationSettings {
                 provider: "google".to_string(),
             },
             temperature: None,
-            max_tokens: 8192,
+            max_tokens: 65535,
             additional_params: None,
             system_prompt: None,
             title: "title".to_string(),
@@ -95,7 +95,7 @@ impl Default for ConversationSettings {
                     command: "/Users/colinrozzi/work/mcp-servers/bin/fs-mcp-server".to_string(),
                     args: vec![
                         "--allowed-dirs".to_string(),
-                        "/Users/colinrozzi/work/theater,/Users/colinrozzi/work/actor-registry"
+                        "/Users/colinrozzi/work/theater,/Users/colinrozzi/work/actor-registry,/Users/colinrozzi/work/job-search"
                             .to_string(),
                     ],
                 },
@@ -164,6 +164,27 @@ impl ChatState {
         proxies: HashMap<String, Proxy>,
         store_id: String,
     ) -> Self {
+        log(&format!("Initializing chat state with ID: {}", id));
+
+        // Checking the store to see if there is anything.
+        let stored_heads =
+            store::get_by_label(&store_id, &conversation_id).expect("Error getting stored heads");
+
+        let head = if let Some(stored_head) = stored_heads {
+            log(&format!("Found stored head: {:?}", stored_head));
+
+            let head_bytes =
+                store::get(&store_id, &stored_head).expect("Error getting stored head");
+            let head = serde_json::from_slice::<Option<String>>(&head_bytes)
+                .expect("Error deserializing head");
+
+            log(&format!("Deserialized head: {:?}", head));
+            head
+        } else {
+            log("No stored heads found");
+            None
+        };
+
         ChatState {
             id,
             conversation_id: conversation_id.clone(),
@@ -172,7 +193,7 @@ impl ChatState {
             settings: ConversationSettings::default(),
             subscriptions: Vec::new(),
             store_id,
-            head: None,
+            head,
         }
     }
 
@@ -213,13 +234,10 @@ impl ChatState {
                         .expect("Error parsing tool list response");
 
                     if let Some(result) = response.result {
-                        log(&format!("Tool list response: {:?}", result));
                         let tools = serde_json::from_value::<Vec<Tool>>(
                             result.get("tools").unwrap().clone(),
                         )
                         .expect("Error parsing tool list response");
-
-                        log(&format!("Parsed tools: {:?}", tools));
 
                         mcp.tools = Some(tools);
                     } else if let Some(error) = response.error {
@@ -248,7 +266,7 @@ impl ChatState {
         loop {
             // Generate a completion
             let model_response = self
-                .generate_proxy_completion(&self.settings.model_config.provider)
+                .generate_proxy_completion(&self.settings.model_config.provider.clone())
                 .expect("Error getting completion");
 
             let message = Message {
@@ -441,7 +459,7 @@ impl ChatState {
 
     /// Sends a request to the anthropic-proxy actor and returns the response
     pub fn generate_proxy_completion(
-        &self,
+        &mut self,
         proxy_name: &String,
     ) -> Result<CompletionResponse, String> {
         log(&format!("Sending request to proxy actor: {}", proxy_name));
@@ -501,8 +519,18 @@ impl ChatState {
         self.messages.insert(id.clone(), chat_msg);
         self.head = Some(id.clone());
 
+        self.store_head();
+
         log(&format!("Updated head: {:?}", self.head));
         self.notify_subscribers();
+    }
+
+    pub fn store_head(&self) {
+        log("Storing head of conversation");
+
+        let head_bytes = to_vec(&self.head).expect("Error serializing head for logging");
+        store::store_at_label(&self.store_id, &self.conversation_id, &head_bytes)
+            .expect("Error storing head");
     }
 
     pub fn get_head(&self) -> Option<String> {
@@ -522,12 +550,12 @@ impl ChatState {
         }
     }
 
-    pub fn get_chain(&self) -> Vec<ChatMessage> {
+    pub fn get_chain(&mut self) -> Vec<ChatMessage> {
         let mut chain = Vec::new();
 
         let mut current_id = self.head.clone();
         while let Some(id) = current_id {
-            if let Some(message) = self.messages.get(&id) {
+            if let Ok(Some(message)) = self.get_message(&id) {
                 chain.push(message.clone());
                 current_id = message.parent_id.clone();
             } else {
@@ -535,12 +563,36 @@ impl ChatState {
             }
         }
 
+        chain.reverse();
+
         chain
     }
 
-    pub fn get_message(&self, id: &str) -> Option<&ChatMessage> {
+    pub fn get_message(&mut self, id: &str) -> Result<Option<ChatMessage>, String> {
         log(&format!("Getting message with ID: {}", id));
-        self.messages.get(id)
+
+        // If the message is not found in our messages, check the store
+        match self.messages.get(id) {
+            Some(message) => Ok(Some(message.clone())),
+            None => {
+                let content_ref = ContentRef {
+                    hash: id.to_string(),
+                };
+                match store::get(&self.store_id, &content_ref) {
+                    Ok(msg_bytes) => {
+                        log(&format!("Found message in store with ID: {}", id));
+                        let message: ChatMessage = serde_json::from_slice(&msg_bytes)
+                            .expect("Error deserializing message");
+                        self.messages.insert(id.to_string(), message.clone());
+                        Ok(Some(message.clone()))
+                    }
+                    Err(_) => {
+                        log(&format!("Message not found in store with ID: {}", id));
+                        return Ok(None);
+                    }
+                }
+            }
+        }
     }
 
     /// Get conversation settings
