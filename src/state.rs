@@ -79,7 +79,7 @@ impl Default for ConversationSettings {
     fn default() -> Self {
         ConversationSettings {
             model_config: ModelConfig {
-                model: "gemini-2.5-pro-exp-03-25".to_string(),
+                model: "gemini-2.5-flash-preview-04-17".to_string(),
                 provider: "google".to_string(),
             },
             temperature: None,
@@ -602,6 +602,7 @@ impl ChatState {
 
         log(&format!("Updated settings: {:?}", self.settings));
 
+        // Start or restart MCP servers with new configuration
         self.start_mcp_servers()
             .expect("Error starting MCP servers");
     }
