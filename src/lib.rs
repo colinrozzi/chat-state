@@ -187,14 +187,7 @@ impl MessageServerClient for Component {
                 chat_state.update_settings(settings.clone());
                 ChatStateResponse::Success
             }
-            ChatStateRequest::Subscribe { sub_id } => {
-                chat_state.subscribe(sub_id);
-                ChatStateResponse::Success
-            }
-            ChatStateRequest::Unsubscribe { sub_id } => {
-                chat_state.unsubscribe(sub_id);
-                ChatStateResponse::Success
-            }
+            // Note: Subscribe/Unsubscribe removed - channels handle this automatically
             ChatStateRequest::GetHistory => ChatStateResponse::History {
                 messages: chat_state.get_chain(),
             },
@@ -238,15 +231,15 @@ impl MessageServerClient for Component {
         ),
         String,
     > {
-        log("Handling channel open in chat-state");
-        let (_data,) = params;
+        log("Accepting channel for subscription");
+        let (_initial_msg,) = params;  // Ignore initial message content
 
-        // Reject all channel open requests
+        // Accept all channels - Theater will provide channel_id later
         Ok((
             state,
             (
                 bindings::exports::ntwk::theater::message_server_client::ChannelAccept {
-                    accepted: false,
+                    accepted: true,
                     message: None,
                 },
             ),
@@ -257,22 +250,40 @@ impl MessageServerClient for Component {
         state: Option<Vec<u8>>,
         params: (String,),
     ) -> Result<(Option<Vec<u8>>,), String> {
-        log("Handling channel close in chat-state");
-        let (_channel_id,) = params;
-
-        // No state modification needed for channel close
-        Ok((state,))
+        let (channel_id,) = params;
+        
+        let mut chat_state: ChatState = match state {
+            Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
+            None => return Ok((state,)),
+        };
+        
+        // Remove closed channel from subscriptions
+        chat_state.remove_subscription_channel(&channel_id);
+        
+        let updated_state_bytes = to_vec(&chat_state)
+            .map_err(|e| format!("Error serializing updated state: {}", e))?;
+        
+        Ok((Some(updated_state_bytes),))
     }
 
     fn handle_channel_message(
         state: Option<Vec<u8>>,
         params: (String, Vec<u8>),
     ) -> Result<(Option<Vec<u8>>,), String> {
-        log("Received channel message in chat-state");
-        let (_channel_id, _message) = params;
-
-        // No state modification needed for now
-        Ok((state,))
+        let (channel_id, _message) = params;
+        
+        let mut chat_state: ChatState = match state {
+            Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
+            None => return Ok((state,)),
+        };
+        
+        // Add channel to subscriptions if not already present
+        chat_state.add_subscription_channel(channel_id);
+        
+        let updated_state_bytes = to_vec(&chat_state)
+            .map_err(|e| format!("Error serializing updated state: {}", e))?;
+        
+        Ok((Some(updated_state_bytes),))
     }
 }
 

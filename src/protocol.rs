@@ -51,10 +51,7 @@ pub enum ChatStateRequest {
     GetHead,
     #[serde(rename = "get_message")]
     GetMessage { message_id: String },
-    #[serde(rename = "subscribe")]
-    Subscribe { sub_id: String },
-    #[serde(rename = "unsubscribe")]
-    Unsubscribe { sub_id: String },
+    // Note: Subscribe/Unsubscribe removed - use channels instead
     #[serde(rename = "list_models")]
     ListModels,
     #[serde(rename = "list_tools")]

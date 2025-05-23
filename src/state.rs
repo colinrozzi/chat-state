@@ -30,8 +30,8 @@ pub struct ChatState {
     /// Conversation settings
     pub settings: ConversationSettings,
 
-    /// Subscription information
-    pub subscriptions: Vec<String>,
+    /// Channel-based subscription information
+    pub subscription_channels: Vec<String>,
 
     /// Store ID for the conversation
     pub store_id: String,
@@ -196,7 +196,7 @@ impl ChatState {
             proxies,
             messages: HashMap::new(),
             settings: conversation_settings,
-            subscriptions: Vec::new(),
+            subscription_channels: Vec::new(),
             store_id,
             head,
         }
@@ -544,14 +544,16 @@ impl ChatState {
     }
 
     pub fn notify_subscribers(&self) {
-        log("Notifying subscribers");
+        log("Notifying subscription channels");
 
         let msg = to_vec(&self.head).expect("Error serializing message for logging");
 
-        for subscriber in &self.subscriptions {
-            log(&format!("Notifying subscriber: {}", subscriber));
-            message_server_host::send(subscriber, &msg)
-                .expect("Error sending message to subscriber");
+        for channel_id in &self.subscription_channels {
+            log(&format!("Notifying channel: {}", channel_id));
+            match message_server_host::send_on_channel(channel_id, &msg) {
+                Ok(_) => {},
+                Err(e) => log(&format!("Failed to notify channel {}: {}", channel_id, e)),
+            }
         }
     }
 
@@ -616,15 +618,17 @@ impl ChatState {
             .expect("Error starting MCP servers");
     }
 
-    /// Subscribe to updates
-    pub fn subscribe(&mut self, channel_id: String) {
-        if !self.subscriptions.contains(&channel_id) {
-            self.subscriptions.push(channel_id);
+    /// Add channel to subscriptions (called automatically)
+    pub fn add_subscription_channel(&mut self, channel_id: String) {
+        if !self.subscription_channels.contains(&channel_id) {
+            self.subscription_channels.push(channel_id.clone());
+            log(&format!("Auto-subscribed channel: {}", channel_id));
         }
     }
 
-    /// Unsubscribe from updates
-    pub fn unsubscribe(&mut self, channel_id: String) {
-        self.subscriptions.retain(|id| id != &channel_id);
+    /// Remove channel from subscriptions (called automatically on channel close)
+    pub fn remove_subscription_channel(&mut self, channel_id: &str) {
+        self.subscription_channels.retain(|id| id != channel_id);
+        log(&format!("Unsubscribed closed channel: {}", channel_id));
     }
 }
