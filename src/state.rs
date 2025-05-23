@@ -404,7 +404,7 @@ impl ChatState {
         self.add_message(ChatEntry::Completion(model_response.clone()));
 
         let msg = serde_json::to_vec(&ContinueProcessing).expect("Error serializing message");
-        send(&self.id, &msg);
+        send(&self.id, &msg).expect("Error sending message");
         log("Sent continue processing message");
 
         Ok(())
@@ -616,13 +616,13 @@ impl ChatState {
 
         chat_msg.id = Some(id.clone());
 
-        self.messages.insert(id.clone(), chat_msg);
+        self.messages.insert(id.clone(), chat_msg.clone());
         self.head = Some(id.clone());
 
         self.store_head();
 
         log(&format!("Updated head: {:?}", self.head));
-        self.notify_subscribers();
+        self.notify_subscribers(chat_msg.clone());
     }
 
     pub fn store_head(&self) {
@@ -638,10 +638,11 @@ impl ChatState {
         self.head.clone()
     }
 
-    pub fn notify_subscribers(&self) {
+    pub fn notify_subscribers(&self, chat_msg: ChatMessage) {
         log("Notifying subscription channels");
 
-        let msg = to_vec(&self.head).expect("Error serializing message for logging");
+        let msg = serde_json::to_vec(&ChatStateResponse::ChatMessage { message: chat_msg })
+            .expect("Error serializing message");
 
         for channel_id in &self.subscription_channels {
             log(&format!("Notifying channel: {}", channel_id));
