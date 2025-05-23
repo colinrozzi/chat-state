@@ -1,0 +1,27 @@
+{
+	"store_id": null,
+	"conversation_id": "fs-mcp-conversation",
+	"config": {
+		"model_config": {
+			"model": "claude-3-7-sonnet-20250219",
+			"provider": "anthropic"
+		},
+		"temperature": 0.7,
+		"max_tokens": 8096,
+		"system_prompt": "You are a helpful AI assistant with access to file system operations. Please help the user manage and interact with their files and directories.",
+		"title": "File System Conversation",
+		"mcp_servers": [
+			{
+				"config": {
+					"command": "/Users/colinrozzi/work/mcp-servers/bin/fs-mcp-server",
+					"args": [
+						"--allowed-dirs",
+						"/Users/colinrozzi/work/theater,/Users/colinrozzi/work/actor-registry,/Users/colinrozzi/work/job-search"
+					]
+				},
+				"actor_id": null,
+				"tools": null
+			}
+		]
+	}
+}

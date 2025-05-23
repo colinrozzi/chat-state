@@ -1,7 +1,12 @@
 name = "chat-state"
 version = "0.1.0"
 component_path = "/Users/colinrozzi/work/actor-registry/chat-state/./target/wasm32-unknown-unknown/release/chat_state.wasm"
-init_state = "/Users/colinrozzi/work/actor-registry/chat-state/init.json"
+init_state = "/Users/colinrozzi/work/actor-registry/chat-state/init-fs-mcp.json"
+
+[[handlers]]
+type = "message-server"
+
+[handlers.config]
 
 [[handlers]]
 type = "runtime"

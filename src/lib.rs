@@ -12,14 +12,17 @@ use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse
 use crate::proxy::Proxy;
 use crate::state::ChatState;
 
+use bindings::ntwk::theater::types::WitActorError;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
+use state::ConversationSettings;
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct InitData {
     store_id: Option<String>,
     conversation_id: String,
+    config: Option<ConversationSettings>,
 }
 
 struct Component;
@@ -60,7 +63,13 @@ impl Guest for Component {
                     }
                 };
 
-                ChatState::new(param, parsed_init_state.conversation_id, proxies, store_id)
+                ChatState::new(
+                    param,
+                    parsed_init_state.conversation_id,
+                    proxies,
+                    store_id,
+                    parsed_init_state.config,
+                )
             }
             None => {
                 log("Chat state actor is not initialized");
@@ -117,6 +126,10 @@ impl MessageServerClient for Component {
         let mut chat_state: ChatState =
             from_slice(&state_bytes).map_err(|e| format!("Error deserializing state: {}", e))?;
 
+        log(&format!(
+            "Stringified request data: {}",
+            String::from_utf8_lossy(&data)
+        ));
         // Parse request
         let request: ChatStateRequest =
             from_slice(&data).map_err(|e| format!("Error parsing request: {}", e))?;
@@ -265,14 +278,18 @@ impl MessageServerClient for Component {
 
 impl SupervisorHandlers for Component {
     fn handle_child_error(
-        state: Option<bindings::exports::ntwk::theater::supervisor_handlers::Json>,
-        _params: (
-            String,
-            bindings::exports::ntwk::theater::supervisor_handlers::WitActorError,
-        ),
-    ) -> Result<(Option<bindings::exports::ntwk::theater::supervisor_handlers::Json>,), String>
-    {
+        state: Option<Vec<u8>>,
+        _params: (String, WitActorError),
+    ) -> Result<(Option<Vec<u8>>,), String> {
         log("Handling child error in chat-state");
+        Ok((state,))
+    }
+
+    fn handle_child_exit(
+        state: Option<Vec<u8>>,
+        _params: (String, Option<Vec<u8>>),
+    ) -> Result<(Option<Vec<u8>>,), String> {
+        log("Handling child exit in chat-state");
         Ok((state,))
     }
 }

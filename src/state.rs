@@ -159,6 +159,7 @@ impl ChatState {
         conversation_id: String,
         proxies: HashMap<String, Proxy>,
         store_id: String,
+        conversation_settings: Option<ConversationSettings>,
     ) -> Self {
         log(&format!("Initializing chat state with ID: {}", id));
 
@@ -181,12 +182,20 @@ impl ChatState {
             None
         };
 
+        log(&format!(
+            "Conversation settings from initialization: {:?}",
+            conversation_settings
+        ));
+
+        let conversation_settings =
+            conversation_settings.unwrap_or_else(|| ConversationSettings::default());
+
         ChatState {
             id,
             conversation_id: conversation_id.clone(),
             proxies,
             messages: HashMap::new(),
-            settings: ConversationSettings::default(),
+            settings: conversation_settings,
             subscriptions: Vec::new(),
             store_id,
             head,
