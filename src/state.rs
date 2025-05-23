@@ -641,12 +641,23 @@ impl ChatState {
     pub fn notify_subscribers(&self, chat_msg: ChatMessage) {
         log("Notifying subscription channels");
 
-        let msg = serde_json::to_vec(&ChatStateResponse::ChatMessage { message: chat_msg })
+        let head_msg = serde_json::to_vec(&ChatStateResponse::Head {
+            head: self.head.clone(),
+        })
+        .expect("Error serializing message");
+
+        let chat_msg = serde_json::to_vec(&ChatStateResponse::ChatMessage { message: chat_msg })
             .expect("Error serializing message");
 
         for channel_id in &self.subscription_channels {
             log(&format!("Notifying channel: {}", channel_id));
-            match message_server_host::send_on_channel(channel_id, &msg) {
+
+            match message_server_host::send_on_channel(channel_id, &head_msg) {
+                Ok(_) => {}
+                Err(e) => log(&format!("Failed to notify channel {}: {}", channel_id, e)),
+            }
+
+            match message_server_host::send_on_channel(channel_id, &chat_msg) {
                 Ok(_) => {}
                 Err(e) => log(&format!("Failed to notify channel {}: {}", channel_id, e)),
             }
