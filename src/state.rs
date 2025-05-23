@@ -1,9 +1,12 @@
 use crate::bindings::ntwk::theater::message_server_host;
+use crate::bindings::ntwk::theater::message_server_host::respond_to_request;
 use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::store::{self, ContentRef};
 use crate::bindings::ntwk::theater::supervisor::spawn;
-use crate::protocol::{McpActorRequest, McpResponse};
+use crate::protocol::{ChatStateResponse, McpActorRequest, McpResponse};
 use crate::proxy::Proxy;
+use crate::state::message_server_host::send;
+use genai_types::messages::Role;
 use genai_types::{
     messages::StopReason, CompletionRequest, CompletionResponse, Message, MessageContent,
     ModelInfo, ProxyRequest, ProxyResponse,
@@ -12,6 +15,9 @@ use mcp_protocol::tool::{Tool, ToolCallResult};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_vec, Value};
 use std::collections::HashMap;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ContinueProcessing;
 
 /// Main state structure for the chat-state actor
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -38,13 +44,31 @@ pub struct ChatState {
 
     /// Head of the conversation
     pub head: Option<String>,
+
+    /// Pending completion request id
+    pub pending_completion: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChatMessage {
     pub id: Option<String>,
     pub parent_id: Option<String>,
-    pub message: Message,
+    pub entry: ChatEntry,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum ChatEntry {
+    Message(Message),
+    Completion(CompletionResponse),
+}
+
+impl From<ChatEntry> for Message {
+    fn from(entry: ChatEntry) -> Self {
+        match entry {
+            ChatEntry::Message(msg) => msg,
+            ChatEntry::Completion(completion) => completion.into(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -199,6 +223,7 @@ impl ChatState {
             subscription_channels: Vec::new(),
             store_id,
             head,
+            pending_completion: None,
         }
     }
 
@@ -263,56 +288,126 @@ impl ChatState {
         Ok(())
     }
 
-    pub fn generate_completion(&mut self) -> Result<String, String> {
+    pub fn continue_chain(&mut self) -> Result<(), String> {
+        let last_message = self
+            .messages
+            .get(self.head.as_ref().unwrap())
+            .expect("Error getting last message");
+
+        let last_message = last_message.clone();
+
+        match last_message.entry {
+            ChatEntry::Message(msg) => {
+                log(&format!(
+                    "Last message is a message, nothing to continue: {:?}",
+                    msg
+                ));
+                self.resolve_pending_completion()
+                    .expect("Error resolving pending completion");
+                Ok(())
+            }
+            ChatEntry::Completion(completion) => {
+                log(&format!(
+                    "Continuing chain with completion: {:?}",
+                    completion
+                ));
+
+                match completion.stop_reason {
+                    StopReason::EndTurn => {
+                        log("Received end turn signal from anthropic-proxy");
+                        self.resolve_pending_completion()
+                            .expect("Error resolving pending completion");
+                        Ok(())
+                    }
+                    StopReason::MaxTokens => {
+                        log("Received max tokens signal from anthropic-proxy");
+                        self.resolve_pending_completion()
+                            .expect("Error resolving pending completion");
+                        Ok(())
+                    }
+                    StopReason::StopSequence => {
+                        log("Received stop sequence signal from anthropic-proxy");
+                        self.resolve_pending_completion()
+                            .expect("Error resolving pending completion");
+                        Ok(())
+                    }
+                    StopReason::ToolUse => {
+                        log("Received tool use signal from anthropic-proxy");
+
+                        let tool_responses =
+                            self.process_tools(completion).expect("Error calling tool");
+
+                        let tool_msg = ChatEntry::Message(Message {
+                            role: Role::User,
+                            content: tool_responses.clone(),
+                        });
+
+                        self.add_message(tool_msg.clone());
+
+                        self.generate_completion()
+                            .expect("Error generating completion");
+
+                        Ok(())
+                    }
+                    StopReason::Other(signal) => {
+                        log(&format!(
+                            "Received unknown signal from anthropic-proxy: {}",
+                            signal
+                        ));
+                        self.resolve_pending_completion()
+                            .expect("Error resolving pending completion");
+                        Ok(())
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn resolve_pending_completion(&mut self) -> Result<(), String> {
+        log("Resolving pending completion");
+
+        match self.pending_completion {
+            Some(ref id) => {
+                log(&format!("Resolving pending completion with ID: {}", id));
+
+                let msg = serde_json::to_vec(&ChatStateResponse::Head {
+                    head: self.head.clone(),
+                })
+                .expect("Error serializing message");
+                if let Err(e) = respond_to_request(id, &msg) {
+                    log(&format!("Error responding to request: {}", e));
+                    return Err(format!("Error responding to request: {}", e));
+                }
+
+                log("Sent continue processing message");
+            }
+            None => {
+                log("No pending completion to resolve");
+            }
+        }
+
+        self.pending_completion = None;
+
+        Ok(())
+    }
+
+    pub fn generate_completion(&mut self) -> Result<(), String> {
         if self.messages.is_empty() {
             return Err("No messages in conversation".to_string());
         }
 
-        loop {
-            // Generate a completion
-            let model_response = self
-                .generate_proxy_completion(&self.settings.model_config.provider.clone())
-                .expect("Error getting completion");
+        // Generate a completion
+        let model_response = self
+            .generate_proxy_completion(&self.settings.model_config.provider.clone())
+            .expect("Error getting completion");
 
-            let message = Message {
-                role: "assistant".to_string(),
-                content: model_response.content.clone(),
-            };
+        self.add_message(ChatEntry::Completion(model_response.clone()));
 
-            self.add_message(message.clone());
+        let msg = serde_json::to_vec(&ContinueProcessing).expect("Error serializing message");
+        send(&self.id, &msg);
+        log("Sent continue processing message");
 
-            match model_response.stop_reason {
-                StopReason::EndTurn => {
-                    log("Received end turn signal from anthropic-proxy");
-                    break;
-                }
-                StopReason::MaxTokens => {
-                    log("Received max tokens signal from anthropic-proxy");
-                    break;
-                }
-                StopReason::StopSequence => {
-                    log("Received stop sequence signal from anthropic-proxy");
-                    break;
-                }
-                StopReason::ToolUse => {
-                    log("Received tool use signal from anthropic-proxy");
-
-                    let tool_responses = self
-                        .process_tools(model_response)
-                        .expect("Error calling tool");
-
-                    let tool_msg = Message {
-                        role: "user".to_string(),
-                        content: tool_responses.clone(),
-                    };
-
-                    self.add_message(tool_msg.clone());
-                }
-            }
-        }
-
-        log("Generated completion successfully");
-        Ok(self.head.clone().unwrap())
+        Ok(())
     }
 
     pub fn get_tools(&self) -> Result<Option<Vec<Tool>>, String> {
@@ -472,7 +567,7 @@ impl ChatState {
         let messages = self
             .get_chain()
             .into_iter()
-            .map(|m| m.message)
+            .map(|m| m.entry.into())
             .collect::<Vec<_>>();
 
         // Create the Anthropic request
@@ -505,13 +600,13 @@ impl ChatState {
         }
     }
 
-    pub fn add_message(&mut self, message: Message) {
-        log(&format!("Adding message: {:?}", message));
+    pub fn add_message(&mut self, chat_entry: ChatEntry) {
+        log("Adding message to conversation");
 
         let mut chat_msg = ChatMessage {
             id: None,
             parent_id: self.head.clone(),
-            message,
+            entry: chat_entry,
         };
 
         let msg_bytes = to_vec(&chat_msg).expect("Error serializing message for logging");
@@ -551,7 +646,7 @@ impl ChatState {
         for channel_id in &self.subscription_channels {
             log(&format!("Notifying channel: {}", channel_id));
             match message_server_host::send_on_channel(channel_id, &msg) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => log(&format!("Failed to notify channel {}: {}", channel_id, e)),
             }
         }

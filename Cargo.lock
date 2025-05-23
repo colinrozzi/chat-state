@@ -34,9 +34,9 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "genai-types"
-version = "0.1.2"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6527b19769e4dded83a087f283feb1a03cb01130fea4da8e179c0db3fc86f9f0"
+checksum = "7a48883fdb7378af22338aa0104191022472e7d05f9d10d7278d76ffe44f3bcb"
 dependencies = [
  "mcp-protocol",
  "serde",

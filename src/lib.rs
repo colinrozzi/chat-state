@@ -10,12 +10,12 @@ use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::store::new;
 use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse};
 use crate::proxy::Proxy;
-use crate::state::ChatState;
+use crate::state::{ChatState, ContinueProcessing};
 
 use bindings::ntwk::theater::types::WitActorError;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
-use state::ConversationSettings;
+use state::{ChatEntry, ConversationSettings};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -97,7 +97,31 @@ impl MessageServerClient for Component {
         log("Handling send message in chat-state");
         let (_data,) = params;
 
-        Ok((state,))
+        match serde_json::from_slice::<ContinueProcessing>(&_data) {
+            Ok(_) => {
+                log("Received continue chain message");
+                // Continue the chain
+                let mut chat_state: ChatState = match state {
+                    Some(s) => {
+                        from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?
+                    }
+                    None => return Ok((state,)),
+                };
+                chat_state
+                    .continue_chain()
+                    .expect("Failed to continue chain");
+                let updated_state_bytes = to_vec(&chat_state)
+                    .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                return Ok((Some(updated_state_bytes),));
+            }
+            Err(_) => {
+                log(&format!(
+                    "Received message: {}",
+                    String::from_utf8_lossy(&_data)
+                ));
+                Ok((state,)) // Ignore the message
+            }
+        }
     }
 
     fn handle_request(
@@ -105,7 +129,7 @@ impl MessageServerClient for Component {
         params: (String, Vec<u8>),
     ) -> Result<(Option<Vec<u8>>, (Option<Vec<u8>>,)), String> {
         log("Handling request in chat-state");
-        let (_request_id, data) = params;
+        let (request_id, data) = params;
 
         // Skip processing if no state
         let state_bytes = match state {
@@ -137,19 +161,41 @@ impl MessageServerClient for Component {
         // Process request based on action
         let response = match request {
             ChatStateRequest::AddMessage { message } => {
-                chat_state.add_message(message);
+                chat_state.add_message(ChatEntry::Message(message));
                 ChatStateResponse::Success
             }
-            ChatStateRequest::GenerateCompletion => {
-                let response = chat_state.generate_completion();
-                match response {
-                    Ok(head) => ChatStateResponse::Head { head: Some(head) },
-                    Err(e) => {
-                        log(&format!("Error generating completion: {}", e));
-                        create_error_response("completion_error", &e)
-                    }
+            ChatStateRequest::GenerateCompletion => match chat_state.pending_completion {
+                Some(_) => {
+                    log("Pending completion already exists, skipping generation");
+                    let err = ChatStateResponse::Error {
+                        error: protocol::ErrorInfo {
+                            code: "pending_completion".to_string(),
+                            details: None,
+                            message: "Pending completion already exists".to_string(),
+                        },
+                    };
+
+                    let state_bytes = to_vec(&chat_state)
+                        .map_err(|e| format!("Error serializing state: {}", e))?;
+
+                    return Ok((
+                        Some(state_bytes),
+                        (Some(to_vec(&err).map_err(|e| {
+                            format!("Error serializing error: {}", e)
+                        })?),),
+                    ));
                 }
-            }
+                None => {
+                    log("Generating completion");
+                    chat_state.pending_completion = Some(request_id);
+                    chat_state.generate_completion();
+
+                    let state_bytes = to_vec(&chat_state)
+                        .map_err(|e| format!("Error serializing state: {}", e))?;
+
+                    return Ok((Some(state_bytes), (None,)));
+                }
+            },
             ChatStateRequest::GetHead => ChatStateResponse::Head {
                 head: chat_state.get_head(),
             },
@@ -232,7 +278,7 @@ impl MessageServerClient for Component {
         String,
     > {
         log("Accepting channel for subscription");
-        let (_initial_msg,) = params;  // Ignore initial message content
+        let (_initial_msg,) = params; // Ignore initial message content
 
         // Accept all channels - Theater will provide channel_id later
         Ok((
@@ -251,18 +297,18 @@ impl MessageServerClient for Component {
         params: (String,),
     ) -> Result<(Option<Vec<u8>>,), String> {
         let (channel_id,) = params;
-        
+
         let mut chat_state: ChatState = match state {
             Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
             None => return Ok((state,)),
         };
-        
+
         // Remove closed channel from subscriptions
         chat_state.remove_subscription_channel(&channel_id);
-        
-        let updated_state_bytes = to_vec(&chat_state)
-            .map_err(|e| format!("Error serializing updated state: {}", e))?;
-        
+
+        let updated_state_bytes =
+            to_vec(&chat_state).map_err(|e| format!("Error serializing updated state: {}", e))?;
+
         Ok((Some(updated_state_bytes),))
     }
 
@@ -271,18 +317,18 @@ impl MessageServerClient for Component {
         params: (String, Vec<u8>),
     ) -> Result<(Option<Vec<u8>>,), String> {
         let (channel_id, _message) = params;
-        
+
         let mut chat_state: ChatState = match state {
             Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
             None => return Ok((state,)),
         };
-        
+
         // Add channel to subscriptions if not already present
         chat_state.add_subscription_channel(channel_id);
-        
-        let updated_state_bytes = to_vec(&chat_state)
-            .map_err(|e| format!("Error serializing updated state: {}", e))?;
-        
+
+        let updated_state_bytes =
+            to_vec(&chat_state).map_err(|e| format!("Error serializing updated state: {}", e))?;
+
         Ok((Some(updated_state_bytes),))
     }
 }
