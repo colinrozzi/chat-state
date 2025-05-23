@@ -653,12 +653,16 @@ impl ChatState {
             log(&format!("Notifying channel: {}", channel_id));
 
             match message_server_host::send_on_channel(channel_id, &head_msg) {
-                Ok(_) => {}
+                Ok(_) => {
+                    log(&format!("Notified channel {}: {:?}", channel_id, head_msg));
+                }
                 Err(e) => log(&format!("Failed to notify channel {}: {}", channel_id, e)),
             }
 
             match message_server_host::send_on_channel(channel_id, &chat_msg) {
-                Ok(_) => {}
+                Ok(_) => {
+                    log(&format!("Notified channel {}: {:?}", channel_id, chat_msg));
+                }
                 Err(e) => log(&format!("Failed to notify channel {}: {}", channel_id, e)),
             }
         }

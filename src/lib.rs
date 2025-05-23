@@ -269,7 +269,7 @@ impl MessageServerClient for Component {
 
     fn handle_channel_open(
         state: Option<Vec<u8>>,
-        params: (Vec<u8>,),
+        params: (String, Vec<u8>),
     ) -> Result<
         (
             Option<Vec<u8>>,
@@ -278,11 +278,32 @@ impl MessageServerClient for Component {
         String,
     > {
         log("Accepting channel for subscription");
-        let (_initial_msg,) = params; // Ignore initial message content
+        let (channel_id, _initial_msg) = params; // Ignore initial message content
 
-        // Accept all channels - Theater will provide channel_id later
+        let mut chat_state: ChatState = match state {
+            Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
+            None => {
+                return Ok((
+                    state,
+                    (
+                        bindings::exports::ntwk::theater::message_server_client::ChannelAccept {
+                            accepted: false,
+                            message: None,
+                        },
+                    ),
+                ))
+            }
+        };
+
+        // Add channel to subscriptions
+        chat_state.add_subscription_channel(channel_id.clone());
+
+        // Serialize updated state
+        let updated_state_bytes =
+            to_vec(&chat_state).map_err(|e| format!("Error serializing updated state: {}", e))?;
+
         Ok((
-            state,
+            Some(updated_state_bytes),
             (
                 bindings::exports::ntwk::theater::message_server_client::ChannelAccept {
                     accepted: true,
