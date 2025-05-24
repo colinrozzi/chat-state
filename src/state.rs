@@ -243,7 +243,7 @@ impl ChatState {
             ));
 
             let actor_id = spawn(
-                "/Users/colinrozzi/work/actors/mcp-poc/manifest.toml",
+                "https://github.com/colinrozzi/mcp-poc/releases/download/v0.1.1/manifest.toml",
                 Some(&serde_json::to_vec(&mcp.config).unwrap()),
             );
 
