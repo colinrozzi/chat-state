@@ -97,29 +97,55 @@ impl MessageServerClient for Component {
         log("Handling send message in chat-state");
         let (_data,) = params;
 
-        match serde_json::from_slice::<ContinueProcessing>(&_data) {
-            Ok(_) => {
-                log("Received continue chain message");
-                // Continue the chain
-                let mut chat_state: ChatState = match state {
-                    Some(s) => {
-                        from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?
+        // Continue the chain
+        let mut chat_state: ChatState = match state {
+            Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
+            None => return Ok((state,)),
+        };
+
+        match serde_json::from_slice::<ChatStateRequest>(&_data) {
+            Ok(request) => match request {
+                ChatStateRequest::ContinueProcessing => {
+                    log("Received continue chain message");
+                    chat_state
+                        .continue_chain()
+                        .expect("Failed to continue chain");
+                    let updated_state_bytes = to_vec(&chat_state)
+                        .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                    Ok((Some(updated_state_bytes),))
+                }
+                ChatStateRequest::AddMessage { message } => {
+                    log(&format!("Adding message: {:?}", message));
+                    chat_state.add_message(ChatEntry::Message(message));
+                    let updated_state_bytes = to_vec(&chat_state)
+                        .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                    Ok((Some(updated_state_bytes),))
+                }
+                ChatStateRequest::GenerateCompletion => {
+                    log("Generating completion");
+                    if chat_state.pending_completion.is_none() {
+                        chat_state.pending_completion = Some("pending_completion".to_string());
+                        chat_state.generate_completion();
                     }
-                    None => return Ok((state,)),
-                };
-                chat_state
-                    .continue_chain()
-                    .expect("Failed to continue chain");
-                let updated_state_bytes = to_vec(&chat_state)
-                    .map_err(|e| format!("Error serializing updated state: {}", e))?;
-                return Ok((Some(updated_state_bytes),));
-            }
+                    let updated_state_bytes = to_vec(&chat_state)
+                        .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                    Ok((Some(updated_state_bytes),))
+                }
+                _ => {
+                    let updated_state_bytes = to_vec(&chat_state)
+                        .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                    Ok((Some(updated_state_bytes),))
+                }
+            },
             Err(_) => {
                 log(&format!(
                     "Received message: {}",
                     String::from_utf8_lossy(&_data)
                 ));
-                Ok((state,)) // Ignore the message
+                // If the message is not a valid request, just return the state
+                let updated_state_bytes = to_vec(&chat_state)
+                    .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                Ok((Some(updated_state_bytes),))
             }
         }
     }
@@ -160,6 +186,13 @@ impl MessageServerClient for Component {
 
         // Process request based on action
         let response = match request {
+            ChatStateRequest::ContinueProcessing => {
+                log("Continuing processing chain");
+                chat_state
+                    .continue_chain()
+                    .map_err(|e| format!("Error continuing chain: {}", e))?;
+                ChatStateResponse::Success
+            }
             ChatStateRequest::AddMessage { message } => {
                 chat_state.add_message(ChatEntry::Message(message));
                 ChatStateResponse::Success
