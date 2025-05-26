@@ -6,6 +6,7 @@ world chat-state {
     import supervisor;
     import message-server-host;
     import store;
+    import random;
 
     export message-server-client;
     export supervisor-handlers;

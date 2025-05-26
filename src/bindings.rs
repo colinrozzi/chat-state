@@ -4166,6 +4166,187 @@ pub mod ntwk {
                 }
             }
         }
+        #[allow(dead_code, async_fn_in_trait, unused_imports, clippy::all)]
+        pub mod random {
+            #[used]
+            #[doc(hidden)]
+            static __FORCE_SECTION_REF: fn() = super::super::super::__link_custom_section_describing_imports;
+            use super::super::super::_rt;
+            #[allow(unused_unsafe, clippy::all)]
+            pub fn random_bytes(length: u32) -> Result<_rt::Vec<u8>, _rt::String> {
+                unsafe {
+                    #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                    #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 3 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 3
+                            * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let ptr0 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/random")]
+                    unsafe extern "C" {
+                        #[link_name = "random-bytes"]
+                        fn wit_import1(_: i32, _: *mut u8);
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import1(_: i32, _: *mut u8) {
+                        unreachable!()
+                    }
+                    unsafe { wit_import1(_rt::as_i32(&length), ptr0) };
+                    let l2 = i32::from(*ptr0.add(0).cast::<u8>());
+                    let result9 = match l2 {
+                        0 => {
+                            let e = {
+                                let l3 = *ptr0
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l4 = *ptr0
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len5 = l4;
+                                _rt::Vec::from_raw_parts(l3.cast(), len5, len5)
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l6 = *ptr0
+                                    .add(::core::mem::size_of::<*const u8>())
+                                    .cast::<*mut u8>();
+                                let l7 = *ptr0
+                                    .add(2 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len8 = l7;
+                                let bytes8 = _rt::Vec::from_raw_parts(
+                                    l6.cast(),
+                                    len8,
+                                    len8,
+                                );
+                                _rt::string_lift(bytes8)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result9
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            pub fn random_range(min: u64, max: u64) -> Result<u64, _rt::String> {
+                unsafe {
+                    #[repr(align(8))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 8 + 2 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 8
+                            + 2 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let ptr0 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/random")]
+                    unsafe extern "C" {
+                        #[link_name = "random-range"]
+                        fn wit_import1(_: i64, _: i64, _: *mut u8);
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import1(_: i64, _: i64, _: *mut u8) {
+                        unreachable!()
+                    }
+                    unsafe { wit_import1(_rt::as_i64(&min), _rt::as_i64(&max), ptr0) };
+                    let l2 = i32::from(*ptr0.add(0).cast::<u8>());
+                    let result7 = match l2 {
+                        0 => {
+                            let e = {
+                                let l3 = *ptr0.add(8).cast::<i64>();
+                                l3 as u64
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l4 = *ptr0.add(8).cast::<*mut u8>();
+                                let l5 = *ptr0
+                                    .add(8 + 1 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len6 = l5;
+                                let bytes6 = _rt::Vec::from_raw_parts(
+                                    l4.cast(),
+                                    len6,
+                                    len6,
+                                );
+                                _rt::string_lift(bytes6)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result7
+                }
+            }
+            #[allow(unused_unsafe, clippy::all)]
+            pub fn random_float() -> Result<f64, _rt::String> {
+                unsafe {
+                    #[repr(align(8))]
+                    struct RetArea(
+                        [::core::mem::MaybeUninit<
+                            u8,
+                        >; 8 + 2 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let mut ret_area = RetArea(
+                        [::core::mem::MaybeUninit::uninit(); 8
+                            + 2 * ::core::mem::size_of::<*const u8>()],
+                    );
+                    let ptr0 = ret_area.0.as_mut_ptr().cast::<u8>();
+                    #[cfg(target_arch = "wasm32")]
+                    #[link(wasm_import_module = "ntwk:theater/random")]
+                    unsafe extern "C" {
+                        #[link_name = "random-float"]
+                        fn wit_import1(_: *mut u8);
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    unsafe extern "C" fn wit_import1(_: *mut u8) {
+                        unreachable!()
+                    }
+                    unsafe { wit_import1(ptr0) };
+                    let l2 = i32::from(*ptr0.add(0).cast::<u8>());
+                    let result7 = match l2 {
+                        0 => {
+                            let e = {
+                                let l3 = *ptr0.add(8).cast::<f64>();
+                                l3
+                            };
+                            Ok(e)
+                        }
+                        1 => {
+                            let e = {
+                                let l4 = *ptr0.add(8).cast::<*mut u8>();
+                                let l5 = *ptr0
+                                    .add(8 + 1 * ::core::mem::size_of::<*const u8>())
+                                    .cast::<usize>();
+                                let len6 = l5;
+                                let bytes6 = _rt::Vec::from_raw_parts(
+                                    l4.cast(),
+                                    len6,
+                                    len6,
+                                );
+                                _rt::string_lift(bytes6)
+                            };
+                            Err(e)
+                        }
+                        _ => _rt::invalid_enum_discriminant(),
+                    };
+                    result7
+                }
+            }
+        }
     }
 }
 #[rustfmt::skip]
@@ -5760,6 +5941,65 @@ mod _rt {
             val != 0
         }
     }
+    pub fn as_i32<T: AsI32>(t: T) -> i32 {
+        t.as_i32()
+    }
+    pub trait AsI32 {
+        fn as_i32(self) -> i32;
+    }
+    impl<'a, T: Copy + AsI32> AsI32 for &'a T {
+        fn as_i32(self) -> i32 {
+            (*self).as_i32()
+        }
+    }
+    impl AsI32 for i32 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for u32 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for i16 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for u16 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for i8 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for u8 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for char {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for usize {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
     #[cfg(target_arch = "wasm32")]
     pub fn run_ctors_once() {
         wit_bindgen_rt::run_ctors_once();
@@ -5809,9 +6049,9 @@ pub(crate) use __export_chat_state_impl as export;
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 2910] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xdd\x15\x01A\x02\x01\
-A\x19\x01B\x16\x01s\x04\0\x08actor-id\x03\0\0\x01s\x04\0\x0achannel-id\x03\0\x02\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 3042] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xe1\x16\x01A\x02\x01\
+A\x1b\x01B\x16\x01s\x04\0\x08actor-id\x03\0\0\x01s\x04\0\x0achannel-id\x03\0\x02\
 \x01p}\x01k\x04\x01r\x02\x08accepted\x7f\x07message\x05\x04\0\x0echannel-accept\x03\
 \0\x06\x01kw\x01r\x03\x0aevent-types\x06parent\x08\x04data\x04\x04\0\x05event\x03\
 \0\x09\x01r\x02\x04hashw\x05event\x0a\x04\0\x0ameta-event\x03\0\x0b\x01p\x0c\x01\
@@ -5858,26 +6098,29 @@ s\x05labels\0\x0b\x04\0\x0cremove-label\x01\x10\x04\0\x11remove-from-label\x01\x
 \x01ps\x01j\x01\x12\x01s\x01@\x01\x08store-ids\0\x13\x04\0\x0blist-labels\x01\x14\
 \x01p\x01\x01j\x01\x15\x01s\x01@\x01\x08store-ids\0\x16\x04\0\x10list-all-conten\
 t\x01\x17\x01j\x01w\x01s\x01@\x01\x08store-ids\0\x18\x04\0\x14calculate-total-si\
-ze\x01\x19\x03\0\x12ntwk:theater/store\x05\x09\x02\x03\0\0\x05event\x02\x03\0\0\x0e\
-channel-accept\x01B\x1d\x02\x03\x02\x01\x0a\x04\0\x05event\x03\0\0\x02\x03\x02\x01\
-\x07\x04\0\x0achannel-id\x03\0\x02\x02\x03\x02\x01\x0b\x04\0\x0echannel-accept\x03\
-\0\x04\x01p}\x01k\x06\x01o\x01\x06\x01o\x01\x07\x01j\x01\x09\x01s\x01@\x02\x05st\
-ate\x07\x06params\x08\0\x0a\x04\0\x0bhandle-send\x01\x0b\x01o\x02s\x06\x01o\x02\x07\
-\x09\x01j\x01\x0d\x01s\x01@\x02\x05state\x07\x06params\x0c\0\x0e\x04\0\x0ehandle\
--request\x01\x0f\x01o\x01\x05\x01o\x02\x07\x10\x01j\x01\x11\x01s\x01@\x02\x05sta\
-te\x07\x06params\x0c\0\x12\x04\0\x13handle-channel-open\x01\x13\x01o\x02\x03\x06\
-\x01@\x02\x05state\x07\x06params\x14\0\x0a\x04\0\x16handle-channel-message\x01\x15\
-\x01o\x01\x03\x01@\x02\x05state\x07\x06params\x16\0\x0a\x04\0\x14handle-channel-\
-close\x01\x17\x04\0\"ntwk:theater/message-server-client\x05\x0c\x02\x03\0\0\x0fw\
-it-actor-error\x01B\x0c\x02\x03\x02\x01\x0d\x04\0\x0fwit-actor-error\x03\0\0\x01\
-p}\x01k\x02\x01o\x02s\x01\x01o\x01\x03\x01j\x01\x05\x01s\x01@\x02\x05state\x03\x06\
-params\x04\0\x06\x04\0\x12handle-child-error\x01\x07\x01o\x02s\x03\x01@\x02\x05s\
-tate\x03\x06params\x08\0\x06\x04\0\x11handle-child-exit\x01\x09\x04\0\x20ntwk:th\
-eater/supervisor-handlers\x05\x0e\x01B\x07\x01p}\x01k\0\x01o\x01s\x01o\x01\x01\x01\
-j\x01\x03\x01s\x01@\x02\x05state\x01\x06params\x02\0\x04\x04\0\x04init\x01\x05\x04\
-\0\x12ntwk:theater/actor\x05\x0f\x04\0\x17ntwk:theater/chat-state\x04\0\x0b\x10\x01\
-\0\x0achat-state\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-componen\
-t\x070.227.1\x10wit-bindgen-rust\x060.41.0";
+ze\x01\x19\x03\0\x12ntwk:theater/store\x05\x09\x01B\x0a\x01p}\x01j\x01\0\x01s\x01\
+@\x01\x06lengthy\0\x01\x04\0\x0crandom-bytes\x01\x02\x01j\x01w\x01s\x01@\x02\x03\
+minw\x03maxw\0\x03\x04\0\x0crandom-range\x01\x04\x01j\x01u\x01s\x01@\0\0\x05\x04\
+\0\x0crandom-float\x01\x06\x03\0\x13ntwk:theater/random\x05\x0a\x02\x03\0\0\x05e\
+vent\x02\x03\0\0\x0echannel-accept\x01B\x1d\x02\x03\x02\x01\x0b\x04\0\x05event\x03\
+\0\0\x02\x03\x02\x01\x07\x04\0\x0achannel-id\x03\0\x02\x02\x03\x02\x01\x0c\x04\0\
+\x0echannel-accept\x03\0\x04\x01p}\x01k\x06\x01o\x01\x06\x01o\x01\x07\x01j\x01\x09\
+\x01s\x01@\x02\x05state\x07\x06params\x08\0\x0a\x04\0\x0bhandle-send\x01\x0b\x01\
+o\x02s\x06\x01o\x02\x07\x09\x01j\x01\x0d\x01s\x01@\x02\x05state\x07\x06params\x0c\
+\0\x0e\x04\0\x0ehandle-request\x01\x0f\x01o\x01\x05\x01o\x02\x07\x10\x01j\x01\x11\
+\x01s\x01@\x02\x05state\x07\x06params\x0c\0\x12\x04\0\x13handle-channel-open\x01\
+\x13\x01o\x02\x03\x06\x01@\x02\x05state\x07\x06params\x14\0\x0a\x04\0\x16handle-\
+channel-message\x01\x15\x01o\x01\x03\x01@\x02\x05state\x07\x06params\x16\0\x0a\x04\
+\0\x14handle-channel-close\x01\x17\x04\0\"ntwk:theater/message-server-client\x05\
+\x0d\x02\x03\0\0\x0fwit-actor-error\x01B\x0c\x02\x03\x02\x01\x0e\x04\0\x0fwit-ac\
+tor-error\x03\0\0\x01p}\x01k\x02\x01o\x02s\x01\x01o\x01\x03\x01j\x01\x05\x01s\x01\
+@\x02\x05state\x03\x06params\x04\0\x06\x04\0\x12handle-child-error\x01\x07\x01o\x02\
+s\x03\x01@\x02\x05state\x03\x06params\x08\0\x06\x04\0\x11handle-child-exit\x01\x09\
+\x04\0\x20ntwk:theater/supervisor-handlers\x05\x0f\x01B\x07\x01p}\x01k\0\x01o\x01\
+s\x01o\x01\x01\x01j\x01\x03\x01s\x01@\x02\x05state\x01\x06params\x02\0\x04\x04\0\
+\x04init\x01\x05\x04\0\x12ntwk:theater/actor\x05\x10\x04\0\x17ntwk:theater/chat-\
+state\x04\0\x0b\x10\x01\0\x0achat-state\x03\0\0\0G\x09producers\x01\x0cprocessed\
+-by\x02\x0dwit-component\x070.227.1\x10wit-bindgen-rust\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

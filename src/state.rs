@@ -633,6 +633,22 @@ impl ChatState {
             .expect("Error storing head");
     }
 
+    pub fn set_head(&mut self, head: Option<String>) -> Result<(), String> {
+        log(&format!("Setting head of conversation to: {:?}", head));
+
+        // look for the head in the messages
+        if let Some(ref head_id) = head {
+            if !self.messages.contains_key(head_id) {
+                log(&format!("Head ID {} not found in messages", head_id));
+                return Err(format!("Head ID {} not found in messages", head_id));
+            }
+        }
+
+        self.head = head.clone();
+        self.store_head();
+        Ok(())
+    }
+
     pub fn get_head(&self) -> Option<String> {
         log("Getting head of conversation");
         self.head.clone()

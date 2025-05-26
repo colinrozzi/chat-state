@@ -12,6 +12,7 @@ use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse
 use crate::proxy::Proxy;
 use crate::state::{ChatState, ContinueProcessing};
 
+use bindings::ntwk::theater::random::{random_bytes, random_float};
 use bindings::ntwk::theater::types::WitActorError;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
@@ -21,7 +22,7 @@ use std::collections::HashMap;
 #[derive(Serialize, Deserialize, Debug)]
 struct InitData {
     store_id: Option<String>,
-    conversation_id: String,
+    conversation_id: Option<String>,
     config: Option<ConversationSettings>,
 }
 
@@ -36,7 +37,7 @@ impl Guest for Component {
                 let parsed_init_state: InitData = from_slice(&state)
                     .map_err(|e| format!("Error deserializing init state: {}", e))?;
                 log(&format!(
-                    "Chat state actor initialized with conversation_id: {}",
+                    "Chat state actor initialized with conversation_id: {:?}",
                     parsed_init_state.conversation_id
                 ));
 
@@ -63,9 +64,20 @@ impl Guest for Component {
                     }
                 };
 
+                let conversation_id = match parsed_init_state.conversation_id {
+                    Some(conversation_id) => conversation_id,
+                    None => {
+                        log("No conversation_id provided, using default");
+                        String::from_utf8_lossy(
+                            &random_bytes(16).expect("Failed to generate random bytes"),
+                        )
+                        .to_string()
+                    }
+                };
+
                 ChatState::new(
                     param,
-                    parsed_init_state.conversation_id,
+                    conversation_id,
                     proxies,
                     store_id,
                     parsed_init_state.config,
@@ -232,6 +244,16 @@ impl MessageServerClient for Component {
             ChatStateRequest::GetHead => ChatStateResponse::Head {
                 head: chat_state.get_head(),
             },
+            ChatStateRequest::SetHead { head } => {
+                log(&format!("Setting head to: {:?}", head));
+                match chat_state.set_head(head) {
+                    Ok(_) => ChatStateResponse::Success,
+                    Err(e) => {
+                        log(&format!("Error setting head: {}", e));
+                        create_error_response("set_head_error", &e)
+                    }
+                }
+            }
             ChatStateRequest::GetMessage { message_id } => {
                 match chat_state.get_message(&message_id) {
                     Ok(Some(message)) => ChatStateResponse::ChatMessage {

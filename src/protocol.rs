@@ -49,6 +49,8 @@ pub enum ChatStateRequest {
     GetHistory,
     #[serde(rename = "get_head")]
     GetHead,
+    #[serde(rename = "set_head")]
+    SetHead { head: Option<String> },
     #[serde(rename = "get_message")]
     GetMessage { message_id: String },
     #[serde(rename = "list_models")]
