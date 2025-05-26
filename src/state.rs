@@ -110,18 +110,7 @@ impl Default for ConversationSettings {
             max_tokens: 65535,
             system_prompt: None,
             title: "title".to_string(),
-            mcp_servers: vec![McpServer {
-                config: McpConfig {
-                    command: "/Users/colinrozzi/work/mcp-servers/bin/fs-mcp-server".to_string(),
-                    args: vec![
-                        "--allowed-dirs".to_string(),
-                        "/Users/colinrozzi/work/theater,/Users/colinrozzi/work/actor-registry,/Users/colinrozzi/work/job-search"
-                            .to_string(),
-                    ],
-                },
-                actor_id: None,
-                tools: None,
-            }],
+            mcp_servers: vec![],
         }
     }
 }

@@ -12,7 +12,7 @@ use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse
 use crate::proxy::Proxy;
 use crate::state::{ChatState, ContinueProcessing};
 
-use bindings::ntwk::theater::random::{random_bytes, random_float};
+use bindings::ntwk::theater::random::{generate_uuid, random_bytes, random_float};
 use bindings::ntwk::theater::types::WitActorError;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
@@ -67,11 +67,8 @@ impl Guest for Component {
                 let conversation_id = match parsed_init_state.conversation_id {
                     Some(conversation_id) => conversation_id,
                     None => {
-                        log("No conversation_id provided, using default");
-                        String::from_utf8_lossy(
-                            &random_bytes(16).expect("Failed to generate random bytes"),
-                        )
-                        .to_string()
+                        log("No conversation_id provided, generating a random one");
+                        generate_uuid().map_err(|e| format!("Error generating UUID: {}", e))?
                     }
                 };
 
