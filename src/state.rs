@@ -3,7 +3,7 @@ use crate::bindings::ntwk::theater::message_server_host::respond_to_request;
 use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::store::{self, ContentRef};
 use crate::bindings::ntwk::theater::supervisor::spawn;
-use crate::protocol::{ChatStateResponse, McpActorRequest, McpResponse};
+use crate::protocol::{ChatStateRequest, ChatStateResponse, McpActorRequest, McpResponse};
 use crate::proxy::Proxy;
 use crate::state::message_server_host::send;
 use genai_types::messages::Role;
@@ -15,9 +15,6 @@ use mcp_protocol::tool::{Tool, ToolCallResult};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_vec, Value};
 use std::collections::HashMap;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ContinueProcessing;
 
 /// Main state structure for the chat-state actor
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -172,7 +169,7 @@ impl ChatState {
         conversation_id: String,
         proxies: HashMap<String, Proxy>,
         store_id: String,
-        conversation_settings: Option<ConversationSettings>,
+        conversation_settings: ConversationSettings,
     ) -> Self {
         log(&format!("Initializing chat state with ID: {}", id));
 
@@ -200,9 +197,6 @@ impl ChatState {
             conversation_settings
         ));
 
-        let conversation_settings =
-            conversation_settings.unwrap_or_else(|| ConversationSettings::default());
-
         ChatState {
             id,
             conversation_id: conversation_id.clone(),
@@ -214,6 +208,18 @@ impl ChatState {
             head,
             pending_completion: None,
         }
+    }
+
+    pub fn store_settings(&self) -> Result<(), String> {
+        log("Storing conversation settings");
+
+        let settings_bytes = to_vec(&self.settings).expect("Error serializing settings");
+        let settings_label = format!("settings_{}", self.conversation_id);
+        store::store_at_label(&self.store_id, &settings_label, &settings_bytes)
+            .expect("Error storing settings");
+
+        log("Stored conversation settings successfully");
+        Ok(())
     }
 
     pub fn start_mcp_servers(&mut self) -> Result<(), String> {
@@ -392,7 +398,8 @@ impl ChatState {
 
         self.add_message(ChatEntry::Completion(model_response.clone()));
 
-        let msg = serde_json::to_vec(&ContinueProcessing).expect("Error serializing message");
+        let msg = serde_json::to_vec(&ChatStateRequest::ContinueProcessing)
+            .expect("Error serializing message");
         send(&self.id, &msg).expect("Error sending message");
         log("Sent continue processing message");
 
@@ -732,6 +739,9 @@ impl ChatState {
         // Start or restart MCP servers with new configuration
         self.start_mcp_servers()
             .expect("Error starting MCP servers");
+
+        self.store_settings()
+            .expect("Error storing conversation settings");
     }
 
     /// Add channel to subscriptions (called automatically)

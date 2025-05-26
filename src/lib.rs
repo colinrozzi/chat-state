@@ -10,9 +10,10 @@ use crate::bindings::ntwk::theater::runtime::log;
 use crate::bindings::ntwk::theater::store::new;
 use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse};
 use crate::proxy::Proxy;
-use crate::state::{ChatState, ContinueProcessing};
+use crate::state::ChatState;
 
-use bindings::ntwk::theater::random::{generate_uuid, random_bytes, random_float};
+use bindings::ntwk::theater::random::generate_uuid;
+use bindings::ntwk::theater::store::{self, ContentRef};
 use bindings::ntwk::theater::types::WitActorError;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
@@ -72,13 +73,57 @@ impl Guest for Component {
                     }
                 };
 
-                ChatState::new(
+                let conversation_settings = match parsed_init_state.config {
+                    Some(config) => config,
+                    None => {
+                        // check if we have conversation settings stored
+                        log("No config provided, checking store for existing settings");
+                        let settings_label = format!("settings_{}", conversation_id);
+                        match store::get_by_label(&store_id, &settings_label) {
+                            Ok(Some(settings_ref)) => {
+                                log("Found existing settings in store");
+                                match store::get(&store_id, &settings_ref) {
+                                    Ok(settings) => from_slice(&settings)
+                                        .map_err(|e| format!("Error deserializing settings: {}", e))
+                                        .unwrap_or_else(|_| {
+                                            log("Error deserializing settings, using default");
+                                            ConversationSettings::default()
+                                        }),
+                                    Err(e) => {
+                                        log(&format!(
+                                            "Error retrieving settings from store: {}",
+                                            e
+                                        ));
+                                        ConversationSettings::default()
+                                    }
+                                }
+                            }
+                            Ok(None) => {
+                                log("No existing settings found in store, using default");
+                                ConversationSettings::default()
+                            }
+                            Err(e) => {
+                                log(&format!(
+                                    "No existing settings found in store, using default: {}",
+                                    e
+                                ));
+                                ConversationSettings::default()
+                            }
+                        }
+                    }
+                };
+
+                let chat_state = ChatState::new(
                     param,
                     conversation_id,
                     proxies,
                     store_id,
-                    parsed_init_state.config,
-                )
+                    conversation_settings,
+                );
+                chat_state
+                    .store_settings()
+                    .map_err(|e| format!("Error storing settings: {}", e))?;
+                chat_state
             }
             None => {
                 log("Chat state actor is not initialized");
@@ -134,7 +179,9 @@ impl MessageServerClient for Component {
                     log("Generating completion");
                     if chat_state.pending_completion.is_none() {
                         chat_state.pending_completion = Some("pending_completion".to_string());
-                        chat_state.generate_completion();
+                        chat_state
+                            .generate_completion()
+                            .expect("Failed to generate completion");
                     }
                     let updated_state_bytes = to_vec(&chat_state)
                         .map_err(|e| format!("Error serializing updated state: {}", e))?;
@@ -230,7 +277,9 @@ impl MessageServerClient for Component {
                 None => {
                     log("Generating completion");
                     chat_state.pending_completion = Some(request_id);
-                    chat_state.generate_completion();
+                    chat_state
+                        .generate_completion()
+                        .expect("Failed to generate completion");
 
                     let state_bytes = to_vec(&chat_state)
                         .map_err(|e| format!("Error serializing state: {}", e))?;
@@ -305,6 +354,10 @@ impl MessageServerClient for Component {
                     log(&format!("Error listing tools: {}", e));
                     create_error_response("tools_error", &e)
                 }
+            },
+            ChatStateRequest::GetMetadata => ChatStateResponse::Metadata {
+                conversation_id: chat_state.conversation_id.clone(),
+                store_id: chat_state.store_id.clone(),
             },
         };
 

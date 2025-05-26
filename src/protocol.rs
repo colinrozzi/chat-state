@@ -59,6 +59,8 @@ pub enum ChatStateRequest {
     ListTools,
     #[serde(rename = "continue_processing")]
     ContinueProcessing,
+    #[serde(rename = "get_metadata")]
+    GetMetadata,
 }
 
 /// Data associated with the response
@@ -88,6 +90,12 @@ pub enum ChatStateResponse {
 
     #[serde(rename = "models_list")]
     ModelsList { models: Vec<ModelInfo> },
+
+    #[serde(rename = "metadata")]
+    Metadata {
+        conversation_id: String,
+        store_id: String,
+    },
 }
 
 /// Error information
