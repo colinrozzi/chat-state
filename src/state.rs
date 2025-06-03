@@ -1,8 +1,8 @@
-use crate::bindings::ntwk::theater::message_server_host;
-use crate::bindings::ntwk::theater::message_server_host::respond_to_request;
-use crate::bindings::ntwk::theater::runtime::log;
-use crate::bindings::ntwk::theater::store::{self, ContentRef};
-use crate::bindings::ntwk::theater::supervisor::spawn;
+use crate::bindings::theater::simple::message_server_host;
+use crate::bindings::theater::simple::message_server_host::respond_to_request;
+use crate::bindings::theater::simple::runtime::log;
+use crate::bindings::theater::simple::store::{self, ContentRef};
+use crate::bindings::theater::simple::supervisor::spawn;
 use crate::protocol::{ChatStateRequest, ChatStateResponse, McpActorRequest, McpResponse};
 use crate::proxy::Proxy;
 use crate::state::message_server_host::send;

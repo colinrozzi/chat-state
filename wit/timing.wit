@@ -15,7 +15,7 @@ package ntwk:theater;
 /// ## Example
 ///
 /// ```rust
-/// use ntwk::theater::timing;
+/// use theater::simple::timing;
 ///
 /// async fn example() -> Result<(), String> {
 ///     // Get the current time
@@ -57,7 +57,7 @@ interface timing {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::timing;
+    /// use theater::simple::timing;
     ///
     /// // Get current timestamp
     /// let now = timing::now();
@@ -88,7 +88,7 @@ interface timing {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::timing;
+    /// use theater::simple::timing;
     ///
     /// // Sleep for 1 second
     /// timing::sleep(1000)?;
@@ -120,7 +120,7 @@ interface timing {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::timing;
+    /// use theater::simple::timing;
     ///
     /// // Wait until a specific time
     /// let target_time = 1672531200000; // Jan 1, 2023 00:00:00 UTC

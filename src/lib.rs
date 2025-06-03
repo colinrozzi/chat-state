@@ -3,18 +3,18 @@ mod protocol;
 mod proxy;
 mod state;
 
-use crate::bindings::exports::ntwk::theater::actor::Guest;
-use crate::bindings::exports::ntwk::theater::message_server_client::Guest as MessageServerClient;
-use crate::bindings::exports::ntwk::theater::supervisor_handlers::Guest as SupervisorHandlers;
-use crate::bindings::ntwk::theater::runtime::log;
-use crate::bindings::ntwk::theater::store::new;
+use crate::bindings::exports::theater::simple::actor::Guest;
+use crate::bindings::exports::theater::simple::message_server_client::Guest as MessageServerClient;
+use crate::bindings::exports::theater::simple::supervisor_handlers::Guest as SupervisorHandlers;
+use crate::bindings::theater::simple::runtime::log;
+use crate::bindings::theater::simple::store::new;
 use crate::protocol::{create_error_response, ChatStateRequest, ChatStateResponse};
 use crate::proxy::Proxy;
 use crate::state::ChatState;
 
-use bindings::ntwk::theater::random::generate_uuid;
-use bindings::ntwk::theater::store::{self, ContentRef};
-use bindings::ntwk::theater::types::WitActorError;
+use bindings::theater::simple::random::generate_uuid;
+use bindings::theater::simple::store::{self, ContentRef};
+use bindings::theater::simple::types::WitActorError;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
 use state::{ChatEntry, ConversationSettings};
@@ -378,7 +378,7 @@ impl MessageServerClient for Component {
     ) -> Result<
         (
             Option<Vec<u8>>,
-            (bindings::exports::ntwk::theater::message_server_client::ChannelAccept,),
+            (bindings::exports::theater::simple::message_server_client::ChannelAccept,),
         ),
         String,
     > {
@@ -391,7 +391,7 @@ impl MessageServerClient for Component {
                 return Ok((
                     state,
                     (
-                        bindings::exports::ntwk::theater::message_server_client::ChannelAccept {
+                        bindings::exports::theater::simple::message_server_client::ChannelAccept {
                             accepted: false,
                             message: None,
                         },
@@ -410,7 +410,7 @@ impl MessageServerClient for Component {
         Ok((
             Some(updated_state_bytes),
             (
-                bindings::exports::ntwk::theater::message_server_client::ChannelAccept {
+                bindings::exports::theater::simple::message_server_client::ChannelAccept {
                     accepted: true,
                     message: None,
                 },

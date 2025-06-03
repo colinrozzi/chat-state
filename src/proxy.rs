@@ -1,6 +1,6 @@
-use crate::bindings::ntwk::theater::message_server_host;
-use crate::bindings::ntwk::theater::runtime::log;
-use crate::bindings::ntwk::theater::supervisor::spawn;
+use crate::bindings::theater::simple::message_server_host;
+use crate::bindings::theater::simple::runtime::log;
+use crate::bindings::theater::simple::supervisor::spawn;
 use genai_types::{CompletionRequest, CompletionResponse, ProxyRequest, ProxyResponse};
 use serde::{Deserialize, Serialize};
 

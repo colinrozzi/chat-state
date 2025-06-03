@@ -16,7 +16,7 @@ package ntwk:theater;
 /// ## Example
 ///
 /// ```rust
-/// use ntwk::theater::store;
+/// use theater::simple::store;
 ///
 /// // Create a new store
 /// let store_id = store::new()?;
@@ -65,7 +65,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store::{content_ref, store};
+    /// use theater::simple::store::{content_ref, store};
     ///
     /// // Store content and get its reference
     /// let store_id = store::new()?;
@@ -98,7 +98,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Create a new store
     /// let store_id = store::new()?;
@@ -127,7 +127,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Store some content
     /// let data = serde_json::to_vec(&my_data)?;
@@ -157,7 +157,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Retrieve content
     /// let content = store::get(store_id, content_ref)?;
@@ -182,7 +182,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Check if content exists before attempting to retrieve it
     /// if store::exists(store_id, content_ref)? {
@@ -212,7 +212,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Store and label config data
     /// let config_data = serde_json::to_vec(&my_config)?;
@@ -244,7 +244,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Retrieve the current configuration
     /// if let Some(ref) = store::get_by_label(store_id, "current-config")? {
@@ -279,7 +279,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Remove an obsolete label
     /// store::remove_label(store_id, "old-config")?;
@@ -309,7 +309,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Remove a specific version from the "historical-configs" label
     /// store::remove_from_label(store_id, "historical-configs", outdated_ref)?;
@@ -339,7 +339,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Store and label user data in one operation
     /// let user_data = serde_json::to_vec(&user)?;
@@ -372,7 +372,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Update configuration with new values
     /// let new_config = serde_json::to_vec(&updated_config)?;
@@ -403,7 +403,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Revert to a previous version
     /// store::replace_at_label(store_id, "current-config", previous_version_ref)?;
@@ -432,7 +432,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Get all available labels
     /// let labels = store::list_labels(store_id)?;
@@ -458,7 +458,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Get all content references
     /// let refs = store::list_all_content(store_id)?;
@@ -487,7 +487,7 @@ interface store {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::store;
+    /// use theater::simple::store;
     ///
     /// // Check store size
     /// let total_bytes = store::calculate_total_size(store_id)?;

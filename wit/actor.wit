@@ -25,8 +25,8 @@ package ntwk:theater;
 // Here's how a typical actor would implement this interface in Rust:
 //
 // ```rust
-// use ntwk::theater::actor::Guest;
-// use ntwk::theater::types::State;
+// use theater::simple::actor::Guest;
+// use theater::simple::types::State;
 //
 // struct MyActor;
 //

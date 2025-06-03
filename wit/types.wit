@@ -23,7 +23,7 @@ package ntwk:theater;
 // These types are typically imported and used in actor implementations:
 //
 // ```rust
-// use ntwk::theater::types::actor_id;
+// use theater::simple::types::actor_id;
 //
 // // Using actor-id for referring to actors
 // fn get_actor_info(id: actor_id) -> String {

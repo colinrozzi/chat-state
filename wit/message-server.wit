@@ -18,8 +18,8 @@ package ntwk:theater;
 /// ## Example
 ///
 /// ```rust
-/// use ntwk::theater::message_server_client::Guest;
-/// use ntwk::theater::types::{channel_accept, channel_id};
+/// use theater::simple::message_server_client::Guest;
+/// use theater::simple::types::{channel_accept, channel_id};
 /// use serde_json::{json, Value};
 ///
 /// struct MyMessageHandler;
@@ -250,8 +250,8 @@ interface message-server-client {
 /// ## Example
 ///
 /// ```rust
-/// use ntwk::theater::message_server_host;
-/// use ntwk::theater::types::actor_id;
+/// use theater::simple::message_server_host;
+/// use theater::simple::types::actor_id;
 /// use serde_json::json;
 ///
 /// async fn example() -> Result<(), String> {
@@ -316,8 +316,8 @@ interface message-server-host {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::message_server_host;
-    /// use ntwk::theater::types::actor_id;
+    /// use theater::simple::message_server_host;
+    /// use theater::simple::types::actor_id;
     /// use serde_json::json;
     ///
     /// // Send a notification
@@ -353,8 +353,8 @@ interface message-server-host {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::message_server_host;
-    /// use ntwk::theater::types::actor_id;
+    /// use theater::simple::message_server_host;
+    /// use theater::simple::types::actor_id;
     /// use serde_json::json;
     ///
     /// // Query a data service
@@ -390,8 +390,8 @@ interface message-server-host {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::message_server_host;
-    /// use ntwk::theater::types::actor_id;
+    /// use theater::simple::message_server_host;
+    /// use theater::simple::types::actor_id;
     /// use serde_json::json;
     ///
     /// // Open a channel to a streaming service
@@ -430,7 +430,7 @@ interface message-server-host {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::message_server_host;
+    /// use theater::simple::message_server_host;
     /// use serde_json::json;
     ///
     /// // Send a message on an established channel
@@ -465,7 +465,7 @@ interface message-server-host {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::message_server_host;
+    /// use theater::simple::message_server_host;
     ///
     /// // Close a channel when done with it
     /// message_server_host::close_channel(channel_id)?;
@@ -488,7 +488,7 @@ interface message-server-host {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::message_server_host;
+    /// use theater::simple::message_server_host;
     ///
     /// // Get all pending requests
     /// let pending_requests = message_server_host::list_outstanding_requests();
@@ -521,7 +521,7 @@ interface message-server-host {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::message_server_host;
+    /// use theater::simple::message_server_host;
     /// use serde_json::json;
     ///
     /// // Respond to a specific request
@@ -557,7 +557,7 @@ interface message-server-host {
     /// ## Example
     ///
     /// ```rust
-    /// use ntwk::theater::message_server_host;
+    /// use theater::simple::message_server_host;
     ///
     /// // Cancel a request that can't be fulfilled
     /// message_server_host::cancel_request("req-123")?;
