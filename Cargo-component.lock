@@ -3,9 +3,9 @@
 version = 1
 
 [[package]]
-name = "colinrozzi-wit:commit-actor"
+name = "colinrozzi-wit:chat-state"
 
 [[package.version]]
 requirement = "^0.0.1"
 version = "0.0.1"
-digest = "sha256:f62a457196796ddf4053f2c6708f3f9671a58f473c076ded10513ba1c2b22ccd"
+digest = "sha256:94dfd2659280c485c9cf641ef50b434f90a639c9640f9812181ba448c98bc2e5"
