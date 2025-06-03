@@ -6,6 +6,10 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
+[package.metadata.component]
+package = "colinrozzi:commit-actor"
+target = "colinrozzi-wit:commit-actor/default@0.0.1"
+
 [dependencies]
 serde_json = "1.0"
 wit-bindgen = "0.17.0"
