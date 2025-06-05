@@ -45,13 +45,13 @@ impl Guest for Component {
                 let mut proxies = HashMap::new();
                 let anthropic_proxy = Proxy::new(
                     "anthropic",
-                    "https://github.com/colinrozzi/anthropic-proxy/releases/download/v0.1.3/manifest.toml"
+                    "/Users/colinrozzi/work/actor-registry/anthropic-proxy/manifest.toml",
                 )
                 .map_err(|e| format!("Error spawning anthropic-proxy: {}", e))?;
 
                 let google_proxy = Proxy::new(
                     "google",
-                    "https://github.com/colinrozzi/google-proxy/releases/download/v0.1.9/manifest.toml"
+                    "/Users/colinrozzi/work/actor-registry/google-proxy/manifest.toml",
                 )
                 .map_err(|e| format!("Error spawning google-proxy: {}", e))?;
                 proxies.insert("anthropic".to_string(), anthropic_proxy);
