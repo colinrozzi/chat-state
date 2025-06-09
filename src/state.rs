@@ -15,6 +15,8 @@ use mcp_protocol::tool::{Tool, ToolCallResult};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_vec, Value};
 use std::collections::HashMap;
+use std::fmt::Display;
+use thiserror::Error;
 
 /// Main state structure for the chat-state actor
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -46,6 +48,18 @@ pub struct ChatState {
     pub pending_completion: Option<String>,
 }
 
+#[derive(Error, Debug, Clone, Serialize, Deserialize)]
+pub struct ChatError {
+    pub message: String,
+    pub code: Option<String>,
+}
+
+impl Display for ChatError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ChatError: {} (code: {:?})", self.message, self.code)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChatMessage {
     pub id: Option<String>,
@@ -57,6 +71,7 @@ pub struct ChatMessage {
 pub enum ChatEntry {
     Message(Message),
     Completion(CompletionResponse),
+    Error(ChatError),
 }
 
 impl From<ChatEntry> for Message {
@@ -64,6 +79,10 @@ impl From<ChatEntry> for Message {
         match entry {
             ChatEntry::Message(msg) => msg,
             ChatEntry::Completion(completion) => completion.into(),
+            ChatEntry::Error(err) => Message {
+                role: Role::User,
+                content: vec![MessageContent::Text { text: err.message }],
+            },
         }
     }
 }
@@ -113,9 +132,23 @@ impl Default for ConversationSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct McpConfig {
+pub struct StdPipeMcpConfig {
     command: String,
     args: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ActorMcpConfig {
+    manifest_path: String,
+    init_state: Option<Value>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum McpConfig {
+    #[serde(rename = "stdio")]
+    StdPipe(StdPipeMcpConfig),
+    #[serde(rename = "actor")]
+    Actor(ActorMcpConfig),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -232,15 +265,31 @@ impl ChatState {
                 continue;
             }
 
-            log(&format!(
-                "Starting MCP server: {} with args: {:?}",
-                mcp.config.command, mcp.config.args
-            ));
-
-            let actor_id = spawn(
-                "https://github.com/colinrozzi/mcp-poc/releases/download/v0.1.1/manifest.toml",
-                Some(&serde_json::to_vec(&mcp.config).unwrap()),
-            );
+            let actor_id = match &mcp.config {
+                McpConfig::StdPipe(config) => {
+                    log(&format!(
+                        "Starting MCP server with stdio: {} {:?}",
+                        config.command, config.args
+                    ));
+                    spawn(
+                        "/Users/colinrozzi/work/actors/mcp-poc/manifest.toml",
+                        Some(&serde_json::to_vec(&config.args).unwrap()),
+                    )
+                }
+                McpConfig::Actor(config) => {
+                    log(&format!(
+                        "Starting MCP server with actor manifest: {}",
+                        config.manifest_path
+                    ));
+                    spawn(
+                        &config.manifest_path,
+                        Some(
+                            &serde_json::to_vec(&config.init_state)
+                                .expect("Error serializing init state"),
+                        ),
+                    )
+                }
+            };
 
             match actor_id {
                 Ok(id) => {
@@ -354,6 +403,12 @@ impl ChatState {
                         Ok(())
                     }
                 }
+            }
+            ChatEntry::Error(err) => {
+                log(&format!("Last message is an error: {:?}", err));
+                self.resolve_pending_completion()
+                    .expect("Error resolving pending completion");
+                Ok(())
             }
         }
     }

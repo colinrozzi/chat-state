@@ -187,6 +187,22 @@ impl MessageServerClient for Component {
                         .map_err(|e| format!("Error serializing updated state: {}", e))?;
                     Ok((Some(updated_state_bytes),))
                 }
+                ChatStateRequest::SetHead { head } => {
+                    log(&format!("Setting head to: {:?}", head));
+                    match chat_state.set_head(head) {
+                        Ok(_) => {
+                            let updated_state_bytes = to_vec(&chat_state)
+                                .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                            Ok((Some(updated_state_bytes),))
+                        }
+                        Err(e) => {
+                            log(&format!("Error setting head: {}", e));
+                            let updated_state_bytes = to_vec(&chat_state)
+                                .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                            Ok((Some(updated_state_bytes),))
+                        }
+                    }
+                }
                 _ => {
                     let updated_state_bytes = to_vec(&chat_state)
                         .map_err(|e| format!("Error serializing updated state: {}", e))?;
@@ -334,7 +350,6 @@ impl MessageServerClient for Component {
                 chat_state.update_settings(settings.clone());
                 ChatStateResponse::Success
             }
-            // Note: Subscribe/Unsubscribe removed - channels handle this automatically
             ChatStateRequest::GetHistory => ChatStateResponse::History {
                 messages: chat_state.get_chain(),
             },

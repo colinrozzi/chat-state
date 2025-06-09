@@ -41,26 +41,30 @@ pub enum ChatStateRequest {
     AddMessage { message: Message },
     #[serde(rename = "generate_completion")]
     GenerateCompletion,
+    #[serde(rename = "continue_processing")]
+    ContinueProcessing,
+
     #[serde(rename = "get_settings")]
     GetSettings,
     #[serde(rename = "update_settings")]
     UpdateSettings { settings: ConversationSettings },
-    #[serde(rename = "get_history")]
-    GetHistory,
+
     #[serde(rename = "get_head")]
     GetHead,
     #[serde(rename = "set_head")]
     SetHead { head: Option<String> },
+
+    #[serde(rename = "get_history")]
+    GetHistory,
     #[serde(rename = "get_message")]
     GetMessage { message_id: String },
+    #[serde(rename = "get_metadata")]
+    GetMetadata,
+
     #[serde(rename = "list_models")]
     ListModels,
     #[serde(rename = "list_tools")]
     ListTools,
-    #[serde(rename = "continue_processing")]
-    ContinueProcessing,
-    #[serde(rename = "get_metadata")]
-    GetMetadata,
 }
 
 /// Data associated with the response
