@@ -154,6 +154,7 @@ pub enum McpConfig {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct McpServer {
     pub actor_id: Option<String>,
+    #[serde(flatten)]
     pub config: McpConfig,
     pub tools: Option<Vec<Tool>>,
 }
@@ -273,7 +274,7 @@ impl ChatState {
                     ));
                     spawn(
                         "/Users/colinrozzi/work/actors/mcp-poc/manifest.toml",
-                        Some(&serde_json::to_vec(&config.args).unwrap()),
+                        Some(&serde_json::to_vec(&config).unwrap()),
                     )
                 }
                 McpConfig::Actor(config) => {
