@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'  # Triggers on version tags like v0.1.0, v1.2.3, etc.
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   release:
@@ -20,10 +21,24 @@ jobs:
         
       - name: Extract version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=dev-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+          fi
+        
+      - name: Verify release artifacts
+        run: |
+          echo "Verifying release artifacts..."
+          ls -la component.wasm manifest.toml
+          if [ -f init.json ]; then
+            ls -la init.json
+          fi
+          echo "WASM file size: $(wc -c < component.wasm) bytes"
         
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             component.wasm
@@ -32,14 +47,22 @@ jobs:
           body: |
             ## Actor Release ${{ steps.version.outputs.VERSION }}
             
-            This release contains the WebAssembly component and updated manifest.
+            This release contains the WebAssembly component and updated manifest for the Chat State actor.
             
-            ### Usage
-            Reference the actor by its manifest URL (the file name will match the actor name):
+            ### Quick Start
+            Reference the actor by its manifest URL:
             ```
             https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.VERSION }}/manifest.toml
             ```
+            
+            ### Files Included
+            - `component.wasm` - The compiled WebAssembly component
+            - `manifest.toml` - Actor manifest with updated URLs
+            - `init.json` - Initial configuration (if applicable)
+            
+            ### Usage
+            This actor provides chat state management capabilities for the Theater system.
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(steps.version.outputs.VERSION, 'dev-') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
