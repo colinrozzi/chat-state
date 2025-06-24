@@ -6,6 +6,7 @@ use crate::bindings::theater::simple::supervisor::spawn;
 use crate::protocol::{ChatStateRequest, ChatStateResponse, McpActorRequest, McpResponse};
 use crate::proxy::Proxy;
 use crate::state::message_server_host::send;
+use crate::MCP_POC_MANIFEST;
 use genai_types::messages::Role;
 use genai_types::{
     messages::StopReason, CompletionRequest, CompletionResponse, Message, MessageContent,
@@ -273,7 +274,7 @@ impl ChatState {
                         config.command, config.args
                     ));
                     spawn(
-                        "/Users/colinrozzi/work/actors/mcp-poc/manifest.toml",
+                        MCP_POC_MANIFEST,
                         Some(&serde_json::to_vec(&config).unwrap()),
                     )
                 }
