@@ -3,6 +3,39 @@ version = "0.1.0"
 component = "/Users/colinrozzi/work/actor-registry/chat-state/./target/wasm32-unknown-unknown/release/chat_state.wasm"
 init_state = "/Users/colinrozzi/work/actor-registry/chat-state/init.json"
 
+[permission_policy.message_server]
+type = "inherit"
+
+[permission_policy.file_system]
+type = "inherit"
+
+[permission_policy.http_client]
+type = "inherit"
+
+[permission_policy.http_framework]
+type = "inherit"
+
+[permission_policy.runtime]
+type = "inherit"
+
+[permission_policy.supervisor]
+type = "inherit"
+
+[permission_policy.store]
+type = "inherit"
+
+[permission_policy.timing]
+type = "inherit"
+
+[permission_policy.process]
+type = "inherit"
+
+[permission_policy.environment]
+type = "inherit"
+
+[permission_policy.random]
+type = "inherit"
+
 [[handlers]]
 type = "message-server"
 
