@@ -11,7 +11,7 @@ use genai_types::{
     messages::StopReason, CompletionRequest, CompletionResponse, Message, MessageContent,
     ModelInfo, ProxyRequest, ProxyResponse,
 };
-use mcp_protocol::tool::{Tool, ToolCallResult};
+use mcp_protocol::tool::{Tool, ToolCallResult, ToolContent};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_vec, Value};
 use std::collections::HashMap;
@@ -427,7 +427,6 @@ impl ChatState {
                 .expect("Error serializing message");
                 if let Err(e) = respond_to_request(id, &msg) {
                     log(&format!("Error responding to request: {}", e));
-                    return Err(format!("Error responding to request: {}", e));
                 }
 
                 log("Sent continue processing message");
@@ -505,23 +504,33 @@ impl ChatState {
                     // Call the tool with the given arguments
                     let result = self.call_tool(name, input)?;
 
-                    let err = if result.error.is_some() {
-                        Some(true)
-                    } else {
-                        None
-                    };
+                    log(&format!("Tool result: {:?}", result));
+                    let tool_use_result = match result.error {
+                        Some(err) => {
+                            log(&format!("Error calling tool: {}", err.message));
+                            MessageContent::ToolResult {
+                                tool_use_id: id,
+                                content: vec![ToolContent::Text {
+                                    text: err.message.clone(),
+                                }],
+                                is_error: Some(true),
+                            }
+                        }
+                        None => {
+                            log(&format!("Tool call result: {:?}", result.result));
 
-                    let tool_result =
-                        serde_json::from_value::<ToolCallResult>(result.result.clone().unwrap())
+                            let tool_result = serde_json::from_value::<ToolCallResult>(
+                                result.result.clone().unwrap(),
+                            )
                             .expect("Error parsing tool call result");
 
-                    let tool_use_result = MessageContent::ToolResult {
-                        tool_use_id: id,
-                        content: tool_result.content,
-                        is_error: err,
+                            MessageContent::ToolResult {
+                                tool_use_id: id,
+                                content: tool_result.content,
+                                is_error: None,
+                            }
+                        }
                     };
-
-                    log(&format!("Tool result: {:?}", result));
 
                     tool_results.push(tool_use_result);
                 }
