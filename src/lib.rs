@@ -27,6 +27,12 @@ struct InitData {
     config: Option<ConversationSettings>,
 }
 
+const ANTHROPIC_PROXY_MANIFEST: &str =
+    "/Users/colinrozzi/work/actor-registry/anthropic-proxy/manifest.toml";
+const GOOGLE_PROXY_MANIFEST: &str =
+    "/Users/colinrozzi/work/actor-registry/google-proxy/manifest.toml";
+const MCP_POC_MANIFEST: &str = "/Users/colinrozzi/work/actors/mcp-poc/manifest.toml";
+
 struct Component;
 impl Guest for Component {
     fn init(init_state: Option<Vec<u8>>, params: (String,)) -> Result<(Option<Vec<u8>>,), String> {
@@ -43,17 +49,11 @@ impl Guest for Component {
                 ));
 
                 let mut proxies = HashMap::new();
-                let anthropic_proxy = Proxy::new(
-                    "anthropic",
-                    "/Users/colinrozzi/work/actor-registry/anthropic-proxy/manifest.toml",
-                )
-                .map_err(|e| format!("Error spawning anthropic-proxy: {}", e))?;
+                let anthropic_proxy = Proxy::new("anthropic", ANTHROPIC_PROXY_MANIFEST)
+                    .map_err(|e| format!("Error spawning anthropic-proxy: {}", e))?;
 
-                let google_proxy = Proxy::new(
-                    "google",
-                    "/Users/colinrozzi/work/actor-registry/google-proxy/manifest.toml",
-                )
-                .map_err(|e| format!("Error spawning google-proxy: {}", e))?;
+                let google_proxy = Proxy::new("google", GOOGLE_PROXY_MANIFEST)
+                    .map_err(|e| format!("Error spawning google-proxy: {}", e))?;
                 proxies.insert("anthropic".to_string(), anthropic_proxy);
                 proxies.insert("google".to_string(), google_proxy);
 
