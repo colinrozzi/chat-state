@@ -160,7 +160,7 @@ impl MessageServerClient for Component {
         match serde_json::from_slice::<ChatStateRequest>(&_data) {
             Ok(request) => match request {
                 ChatStateRequest::ContinueProcessing => {
-                    log("Received continue chain message");
+                    log("Received continue processing message");
                     chat_state
                         .continue_chain()
                         .expect("Failed to continue chain");
@@ -476,11 +476,12 @@ impl MessageServerClient for Component {
 
 impl SupervisorHandlers for Component {
     fn handle_child_error(
-        state: Option<Vec<u8>>,
+        _state: Option<Vec<u8>>,
         _params: (String, WitActorError),
     ) -> Result<(Option<Vec<u8>>,), String> {
         log("Handling child error in chat-state");
-        Ok((state,))
+
+        Err("Child error handling not implemented in chat-state".to_string())
     }
 
     fn handle_child_exit(
