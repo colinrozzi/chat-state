@@ -74,12 +74,30 @@ runs:
       shell: bash
       run: |
         if ! command -v cargo-component &> /dev/null; then
+          echo "Installing cargo-component..."
           if [ "${{ inputs.cargo-component-version }}" = "latest" ]; then
             cargo install cargo-component
           else
             cargo install cargo-component --version ${{ inputs.cargo-component-version }}
           fi
+        else
+          echo "cargo-component already installed"
+          cargo-component --version
         fi
+        
+    - name: Configure wasm-pkg registry
+      shell: bash
+      run: |
+        echo "Configuring wasm-pkg registry..."
+        mkdir -p ~/.config/wasm-pkg
+        cat > ~/.config/wasm-pkg/config.toml << 'EOF'
+        default_registry = "wa.dev"
+        [namespace_registries]
+        [package_registry_overrides]
+        [registry]
+        EOF
+        echo "✅ wasm-pkg configuration created"
+        cat ~/.config/wasm-pkg/config.toml
         
     - name: Build WASM component
       shell: bash
