@@ -492,6 +492,14 @@ impl SupervisorHandlers for Component {
         log("Handling child exit in chat-state");
         Ok((state,))
     }
+
+    fn handle_child_external_stop(
+        state: Option<Vec<u8>>,
+        params: (String,),
+    ) -> Result<(Option<Vec<u8>>,), String> {
+        log("Handling child external stop in chat-state");
+        Ok((state,))
+    }
 }
 
 bindings::export!(Component with_types_in bindings);
