@@ -1,10 +1,9 @@
-name: Release Actor
+name: Release Theater Actor
 
 on:
   push:
     tags:
       - 'v*'  # Triggers on version tags like v0.1.0, v1.2.3, etc.
-  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   release:
@@ -21,48 +20,52 @@ jobs:
         
       - name: Extract version from tag
         id: version
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          else
-            echo "VERSION=dev-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
-          fi
-        
-      - name: Verify release artifacts
-        run: |
-          echo "Verifying release artifacts..."
-          ls -la component.wasm manifest.toml
-          if [ -f init.json ]; then
-            ls -la init.json
-          fi
-          echo "WASM file size: $(wc -c < component.wasm) bytes"
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
         
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         with:
           files: |
             component.wasm
             manifest.toml
             init.json
           body: |
-            ## Actor Release ${{ steps.version.outputs.VERSION }}
+            ## 🎭 ${{ github.event.repository.name }} ${{ steps.version.outputs.VERSION }}
             
-            This release contains the WebAssembly component and updated manifest for the Chat State actor.
+            This release contains the WebAssembly component and configuration files for the **${{ github.event.repository.name }}** actor.
             
-            ### Quick Start
-            Reference the actor by its manifest URL:
+            ### 📦 What's Included
+            - `component.wasm` - The compiled WebAssembly actor component
+            - `manifest.toml` - Actor manifest with GitHub release URLs
+            - `init.json` - Initial state configuration (if applicable)
+            
+            ### 🚀 Quick Start
+            
+            **Prerequisites:**
+            - Install and configure the `theater` CLI tool
+            - Ensure `theater-server-cli` is running
+            
+            **Run the actor:**
+            ```bash
+            theater start https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.VERSION }}/manifest.toml
+            ```
+            
+            ### 🔗 Manifest URL
             ```
             https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.VERSION }}/manifest.toml
             ```
             
-            ### Files Included
-            - `component.wasm` - The compiled WebAssembly component
-            - `manifest.toml` - Actor manifest with updated URLs
-            - `init.json` - Initial configuration (if applicable)
+            ### 📖 About
+            This is a theater actor built with Rust and compiled to WebAssembly. It can be deployed and managed within the theater actor system for distributed computing tasks.
             
-            ### Usage
-            This actor provides chat state management capabilities for the Theater system.
+            For more details about this actor's capabilities, check the repository documentation.
+            
+            ---
+            
+            **Repository:** [${{ github.repository }}](https://github.com/${{ github.repository }})  
+            **Release:** ${{ steps.version.outputs.VERSION }}  
+            **Build:** [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           draft: false
-          prerelease: ${{ contains(steps.version.outputs.VERSION, 'dev-') }}
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
