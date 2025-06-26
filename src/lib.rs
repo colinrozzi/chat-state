@@ -28,11 +28,11 @@ struct InitData {
 }
 
 const ANTHROPIC_PROXY_MANIFEST: &str =
-    "https://github.com/colinrozzi/anthropic-proxy/releases/download/v0.1.5/manifest.toml";
+    "https://github.com/colinrozzi/anthropic-proxy/releases/latest/download/manifest.toml";
 const GOOGLE_PROXY_MANIFEST: &str =
-    "https://github.com/colinrozzi/google-proxy/releases/download/v0.2.2/manifest.toml";
+    "https://github.com/colinrozzi/google-proxy/releases/latest/download/manifest.toml";
 const MCP_POC_MANIFEST: &str =
-    "https://github.com/colinrozzi/mcp-poc/releases/download/v0.1.2/manifest.toml";
+    "https://github.com/colinrozzi/mcp-poc/releases/latest/download/manifest.toml";
 
 struct Component;
 impl Guest for Component {
