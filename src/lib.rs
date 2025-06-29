@@ -14,7 +14,7 @@ use crate::state::ChatState;
 
 use bindings::theater::simple::random::generate_uuid;
 use bindings::theater::simple::store::{self, ContentRef};
-use bindings::theater::simple::types::WitActorError;
+use bindings::theater::simple::types::{WitActorError, WitErrorType};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
 use state::{ChatEntry, ConversationSettings};
@@ -180,9 +180,13 @@ impl MessageServerClient for Component {
                     log("Generating completion");
                     if chat_state.pending_completion.is_none() {
                         chat_state.pending_completion = Some("pending_completion".to_string());
-                        chat_state
-                            .generate_completion()
-                            .expect("Failed to generate completion");
+                        match chat_state.generate_completion() {
+                            Ok(_) => {}
+                            Err(e) => {
+                                log(&format!("Error generating completion: {}", e));
+                                return Err(format!("Error generating completion: {}", e));
+                            }
+                        };
                     }
                     let updated_state_bytes = to_vec(&chat_state)
                         .map_err(|e| format!("Error serializing updated state: {}", e))?;
@@ -294,14 +298,18 @@ impl MessageServerClient for Component {
                 None => {
                     log("Generating completion");
                     chat_state.pending_completion = Some(request_id);
-                    chat_state
-                        .generate_completion()
-                        .expect("Failed to generate completion");
+                    match chat_state.generate_completion() {
+                        Ok(_) => {
+                            let state_bytes = to_vec(&chat_state)
+                                .map_err(|e| format!("Error serializing state: {}", e))?;
 
-                    let state_bytes = to_vec(&chat_state)
-                        .map_err(|e| format!("Error serializing state: {}", e))?;
-
-                    return Ok((Some(state_bytes), (None,)));
+                            return Ok((Some(state_bytes), (None,)));
+                        }
+                        Err(e) => {
+                            log(&format!("Error generating completion: {}", e));
+                            return Err(format!("Error generating completion: {}", e));
+                        }
+                    }
                 }
             },
             ChatStateRequest::GetHead => ChatStateResponse::Head {
@@ -478,11 +486,36 @@ impl MessageServerClient for Component {
 impl SupervisorHandlers for Component {
     fn handle_child_error(
         _state: Option<Vec<u8>>,
-        _params: (String, WitActorError),
+        params: (String, WitActorError),
     ) -> Result<(Option<Vec<u8>>,), String> {
         log("Handling child error in chat-state");
 
-        Err("Child error handling not implemented in chat-state".to_string())
+        let (child, error) = params;
+
+        log(&format!(
+            "Child {} encountered an error: {:?}",
+            child, error
+        ));
+
+        match error {
+            WitActorError {
+                error_type: WitErrorType::Internal,
+                data,
+            } => {
+                log("Internal error type");
+                let d = data.unwrap_or(vec![]);
+                let error_str = String::from_utf8_lossy(&d);
+                log(&format!("Error data: {}", error_str));
+                Err(format!("Internal error in child {}: {}", child, error_str))
+            }
+            _ => {
+                log("Other error type");
+                let data = error.data.unwrap();
+                log(&format!("Error data: {:?}", data));
+                let error_str = String::from_utf8_lossy(&data);
+                Err(format!("Other error in child {}: {}", child, error_str))
+            }
+        }
     }
 
     fn handle_child_exit(
