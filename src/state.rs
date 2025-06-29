@@ -448,9 +448,17 @@ impl ChatState {
         }
 
         // Generate a completion
-        let model_response = self
-            .generate_proxy_completion(&self.settings.model_config.provider.clone())
-            .expect("Error getting completion");
+        let model_response =
+            match self.generate_proxy_completion(&self.settings.model_config.provider.clone()) {
+                Ok(response) => {
+                    log("Generated completion successfully");
+                    response
+                }
+                Err(e) => {
+                    log(&format!("Error generating completion: {}", e));
+                    return Err(format!("Error generating completion: {}", e));
+                }
+            };
 
         self.add_message(ChatEntry::Completion(model_response.clone()));
 
@@ -624,7 +632,10 @@ impl ChatState {
         &mut self,
         proxy_name: &String,
     ) -> Result<CompletionResponse, String> {
-        log(&format!("Sending request to proxy actor: {}", proxy_name));
+        log(&format!(
+            "Generating completion from proxy actor: {}",
+            proxy_name
+        ));
 
         let messages = self
             .get_chain()
@@ -651,12 +662,16 @@ impl ChatState {
             .get(proxy_name)
             .ok_or_else(|| format!("Proxy {} not found", proxy_name))?
             .send_to_proxy(request)
-            .expect("Error sending request to anthropic-proxy");
+            .expect("Error sending request to proxy");
 
         match response {
             ProxyResponse::Completion { completion } => {
-                log("Received completion from anthropic-proxy");
+                log("Received completion from proxy");
                 Ok(completion)
+            }
+            ProxyResponse::Error { error } => {
+                log(&format!("Error from proxy: {}", error));
+                Err(format!("Error from proxy: {}", error))
             }
             _ => Err("Unexpected response from anthropic-proxy".to_string()),
         }
