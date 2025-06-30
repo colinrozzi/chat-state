@@ -96,6 +96,42 @@ pub struct ModelConfig {
 
 /// Conversation settings
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct InitConversationSettings {
+    /// Model to use (e.g., "claude-3-7-sonnet-20250219")
+    pub model_config: ModelConfig,
+
+    /// Temperature setting (0.0 to 1.0)
+    pub temperature: Option<f32>,
+
+    /// Maximum tokens to generate
+    pub max_tokens: u32,
+
+    /// System prompt to use
+    pub system_prompt: Option<String>,
+
+    /// Title of the conversation
+    pub title: String,
+
+    /// Mcp servers
+    pub mcp_servers: Option<Vec<McpServer>>,
+}
+
+/// Into ConversationSettings trait to convert InitConversationSettings to ConversationSettings
+impl From<InitConversationSettings> for ConversationSettings {
+    fn from(init: InitConversationSettings) -> Self {
+        ConversationSettings {
+            model_config: init.model_config,
+            temperature: init.temperature,
+            max_tokens: init.max_tokens,
+            system_prompt: init.system_prompt,
+            title: init.title,
+            mcp_servers: init.mcp_servers.unwrap_or_default(),
+        }
+    }
+}
+
+/// Conversation settings
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConversationSettings {
     /// Model to use (e.g., "claude-3-7-sonnet-20250219")
     pub model_config: ModelConfig,

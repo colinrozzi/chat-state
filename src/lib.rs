@@ -13,18 +13,18 @@ use crate::proxy::Proxy;
 use crate::state::ChatState;
 
 use bindings::theater::simple::random::generate_uuid;
-use bindings::theater::simple::store::{self, ContentRef};
+use bindings::theater::simple::store::{self};
 use bindings::theater::simple::types::{WitActorError, WitErrorType};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
-use state::{ChatEntry, ConversationSettings};
+use state::{ChatEntry, ConversationSettings, InitConversationSettings};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct InitData {
     store_id: Option<String>,
     conversation_id: Option<String>,
-    config: Option<ConversationSettings>,
+    config: Option<InitConversationSettings>,
 }
 
 const ANTHROPIC_PROXY_MANIFEST: &str =
@@ -75,7 +75,7 @@ impl Guest for Component {
                 };
 
                 let conversation_settings = match parsed_init_state.config {
-                    Some(config) => config,
+                    Some(config) => config.into(),
                     None => {
                         // check if we have conversation settings stored
                         log("No config provided, checking store for existing settings");
