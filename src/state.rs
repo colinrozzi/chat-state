@@ -210,19 +210,25 @@ impl McpServer {
         }
 
         // Check if the tool is valid
-        if !self.tools.as_ref().unwrap().iter().any(|t| t.name == tool) {
+        let tools = self.tools.as_ref()
+            .ok_or("No tools available")?;
+        
+        if !tools.iter().any(|t| t.name == tool) {
             return Err(format!("Tool {} not found", tool));
         }
 
         // Call the tool with the given arguments
-        let result = message_server_host::request(
-            self.actor_id.as_ref().unwrap(),
-            &to_vec(&McpActorRequest::ToolsCall { name: tool, args })
-                .expect("Error serializing tool use request"),
-        )
-        .map_err(|e| format!("Error calling tool: {}", e))?;
+        let actor_id = self.actor_id.as_ref()
+            .ok_or("MCP server not started")?;
+        
+        let request_bytes = to_vec(&McpActorRequest::ToolsCall { name: tool, args })
+            .map_err(|e| format!("Failed to serialize tool use request: {}", e))?;
+        
+        let result = message_server_host::request(actor_id, &request_bytes)
+            .map_err(|e| format!("Failed to call tool: {}", e))?;
 
-        serde_json::from_slice(&result).map_err(|e| format!("Error parsing tool response: {}", e))
+        serde_json::from_slice(&result)
+            .map_err(|e| format!("Failed to parse tool response: {}", e))
     }
 
     pub fn has_tool(&self, tool: &str) -> bool {
@@ -244,23 +250,37 @@ impl ChatState {
     ) -> Self {
         log(&format!("Initializing chat state with ID: {}", id));
 
-        // Checking the store to see if there is anything.
-        let stored_heads =
-            store::get_by_label(&store_id, &conversation_id).expect("Error getting stored heads");
-
-        let head = if let Some(stored_head) = stored_heads {
-            log(&format!("Found stored head: {:?}", stored_head));
-
-            let head_bytes =
-                store::get(&store_id, &stored_head).expect("Error getting stored head");
-            let head = serde_json::from_slice::<Option<String>>(&head_bytes)
-                .expect("Error deserializing head");
-
-            log(&format!("Deserialized head: {:?}", head));
-            head
-        } else {
-            log("No stored heads found");
-            None
+        // Check the store to see if there is anything stored
+        let head = match store::get_by_label(&store_id, &conversation_id) {
+            Ok(Some(stored_head)) => {
+                log(&format!("Found stored head: {:?}", stored_head));
+                match store::get(&store_id, &stored_head) {
+                    Ok(head_bytes) => {
+                        match serde_json::from_slice::<Option<String>>(&head_bytes) {
+                            Ok(head) => {
+                                log(&format!("Deserialized head: {:?}", head));
+                                head
+                            }
+                            Err(e) => {
+                                log(&format!("Failed to deserialize head: {}", e));
+                                None
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log(&format!("Failed to get stored head: {}", e));
+                        None
+                    }
+                }
+            }
+            Ok(None) => {
+                log("No stored heads found");
+                None
+            }
+            Err(e) => {
+                log(&format!("Failed to check for stored heads: {}", e));
+                None
+            }
         };
 
         log(&format!(
@@ -284,10 +304,11 @@ impl ChatState {
     pub fn store_settings(&self) -> Result<(), String> {
         log("Storing conversation settings");
 
-        let settings_bytes = to_vec(&self.settings).expect("Error serializing settings");
+        let settings_bytes = to_vec(&self.settings)
+            .map_err(|e| format!("Failed to serialize settings: {}", e))?;
         let settings_label = format!("settings_{}", self.conversation_id);
         store::store_at_label(&self.store_id, &settings_label, &settings_bytes)
-            .expect("Error storing settings");
+            .map_err(|e| format!("Failed to store settings: {}", e))?;
 
         log("Stored conversation settings successfully");
         Ok(())
@@ -295,10 +316,10 @@ impl ChatState {
 
     pub fn start_mcp_servers(&mut self) -> Result<(), String> {
         for mcp in &mut self.settings.mcp_servers {
-            if mcp.actor_id.is_some() {
+            if let Some(ref actor_id) = mcp.actor_id {
                 log(&format!(
                     "MCP server already started with actor ID: {}",
-                    mcp.actor_id.as_ref().unwrap()
+                    actor_id
                 ));
                 continue;
             }
@@ -309,23 +330,18 @@ impl ChatState {
                         "Starting MCP server with stdio: {} {:?}",
                         config.command, config.args
                     ));
-                    spawn(
-                        MCP_POC_MANIFEST,
-                        Some(&serde_json::to_vec(&config).unwrap()),
-                    )
+                    let config_bytes = serde_json::to_vec(&config)
+                        .map_err(|e| format!("Failed to serialize stdio config: {}", e))?;
+                    spawn(MCP_POC_MANIFEST, Some(&config_bytes))
                 }
                 McpConfig::Actor(config) => {
                     log(&format!(
                         "Starting MCP server with actor manifest: {}",
                         config.manifest_path
                     ));
-                    spawn(
-                        &config.manifest_path,
-                        Some(
-                            &serde_json::to_vec(&config.init_state)
-                                .expect("Error serializing init state"),
-                        ),
-                    )
+                    let init_state_bytes = serde_json::to_vec(&config.init_state)
+                        .map_err(|e| format!("Failed to serialize init state: {}", e))?;
+                    spawn(&config.manifest_path, Some(&init_state_bytes))
                 }
             };
 
@@ -336,20 +352,23 @@ impl ChatState {
 
                     // Send the actor a list tools request
                     let tool_list_request = McpActorRequest::ToolsList {};
-                    let request_bytes =
-                        to_vec(&tool_list_request).expect("Error serializing tool list request");
+                    let request_bytes = to_vec(&tool_list_request)
+                        .map_err(|e| format!("Failed to serialize tool list request: {}", e))?;
+                    
                     log(&format!("Sending tool list request to MCP server: {}", id));
+                    
                     let response_bytes = message_server_host::request(&id, &request_bytes)
-                        .expect("Error sending tool list request to MCP server");
+                        .map_err(|e| format!("Failed to send tool list request to MCP server: {}", e))?;
 
                     let response: McpResponse = serde_json::from_slice(&response_bytes)
-                        .expect("Error parsing tool list response");
+                        .map_err(|e| format!("Failed to parse tool list response: {}", e))?;
 
                     if let Some(result) = response.result {
-                        let tools = serde_json::from_value::<Vec<Tool>>(
-                            result.get("tools").unwrap().clone(),
-                        )
-                        .expect("Error parsing tool list response");
+                        let tools_value = result.get("tools")
+                            .ok_or("No 'tools' field in MCP response")?;
+                        
+                        let tools = serde_json::from_value::<Vec<Tool>>(tools_value.clone())
+                            .map_err(|e| format!("Failed to parse tool list from response: {}", e))?;
 
                         mcp.tools = Some(tools);
                     } else if let Some(error) = response.error {
@@ -361,8 +380,8 @@ impl ChatState {
                     }
                 }
                 Err(e) => {
-                    log(&format!("Error starting MCP server: {}", e));
-                    return Err(format!("Error starting MCP server: {}", e));
+                    log(&format!("Failed to start MCP server: {}", e));
+                    return Err(format!("Failed to start MCP server: {}", e));
                 }
             }
         }
@@ -371,12 +390,12 @@ impl ChatState {
     }
 
     pub fn continue_chain(&mut self) -> Result<(), String> {
-        let last_message = self
-            .messages
-            .get(self.head.as_ref().unwrap())
-            .expect("Error getting last message");
+        let head_id = self.head.as_ref()
+            .ok_or("No head message found - conversation chain is empty")?;
 
-        let last_message = last_message.clone();
+        let last_message = self.messages.get(head_id)
+            .ok_or("Head message not found in message store - data corruption possible")?
+            .clone();
 
         match last_message.entry {
             ChatEntry::Message(msg) => {
@@ -385,7 +404,7 @@ impl ChatState {
                     msg
                 ));
                 self.resolve_pending_completion()
-                    .expect("Error resolving pending completion");
+                    .map_err(|e| format!("Failed to resolve pending completion: {}", e))?;
                 Ok(())
             }
             ChatEntry::Completion(completion) => {
@@ -396,28 +415,28 @@ impl ChatState {
 
                 match completion.stop_reason {
                     StopReason::EndTurn => {
-                        log("Received end turn signal from anthropic-proxy");
+                        log("Received end turn signal from proxy");
                         self.resolve_pending_completion()
-                            .expect("Error resolving pending completion");
+                            .map_err(|e| format!("Failed to resolve pending completion after end turn: {}", e))?;
                         Ok(())
                     }
                     StopReason::MaxTokens => {
-                        log("Received max tokens signal from anthropic-proxy");
+                        log("Received max tokens signal from proxy");
                         self.resolve_pending_completion()
-                            .expect("Error resolving pending completion");
+                            .map_err(|e| format!("Failed to resolve pending completion after max tokens: {}", e))?;
                         Ok(())
                     }
                     StopReason::StopSequence => {
-                        log("Received stop sequence signal from anthropic-proxy");
+                        log("Received stop sequence signal from proxy");
                         self.resolve_pending_completion()
-                            .expect("Error resolving pending completion");
+                            .map_err(|e| format!("Failed to resolve pending completion after stop sequence: {}", e))?;
                         Ok(())
                     }
                     StopReason::ToolUse => {
-                        log("Received tool use signal from anthropic-proxy");
+                        log("Received tool use signal from proxy");
 
-                        let tool_responses =
-                            self.process_tools(completion).expect("Error calling tool");
+                        let tool_responses = self.process_tools(completion)
+                            .map_err(|e| format!("Failed to process tools: {}", e))?;
 
                         let tool_msg = ChatEntry::Message(Message {
                             role: Role::User,
@@ -427,17 +446,17 @@ impl ChatState {
                         self.add_message(tool_msg.clone());
 
                         self.generate_completion()
-                            .expect("Error generating completion");
+                            .map_err(|e| format!("Failed to generate completion after tool use: {}", e))?;
 
                         Ok(())
                     }
                     StopReason::Other(signal) => {
                         log(&format!(
-                            "Received unknown signal from anthropic-proxy: {}",
+                            "Received unknown signal from proxy: {}",
                             signal
                         ));
                         self.resolve_pending_completion()
-                            .expect("Error resolving pending completion");
+                            .map_err(|e| format!("Failed to resolve pending completion after unknown signal: {}", e))?;
                         Ok(())
                     }
                 }
@@ -445,7 +464,7 @@ impl ChatState {
             ChatEntry::Error(err) => {
                 log(&format!("Last message is an error: {:?}", err));
                 self.resolve_pending_completion()
-                    .expect("Error resolving pending completion");
+                    .map_err(|e| format!("Failed to resolve pending completion after error: {}", e))?;
                 Ok(())
             }
         }
@@ -461,12 +480,13 @@ impl ChatState {
                 let msg = serde_json::to_vec(&ChatStateResponse::Head {
                     head: self.head.clone(),
                 })
-                .expect("Error serializing message");
+                .map_err(|e| format!("Failed to serialize head response: {}", e))?;
                 if let Err(e) = respond_to_request(id, &msg) {
-                    log(&format!("Error responding to request: {}", e));
+                    log(&format!("Failed to respond to request: {}", e));
+                    // Don't return error here as the completion itself succeeded
                 }
 
-                log("Sent continue processing message");
+                log("Sent head response to pending completion");
             }
             None => {
                 log("No pending completion to resolve");
@@ -480,27 +500,22 @@ impl ChatState {
 
     pub fn generate_completion(&mut self) -> Result<(), String> {
         if self.messages.is_empty() {
-            return Err("No messages in conversation".to_string());
+            return Err("Cannot generate completion: no messages in conversation".to_string());
         }
 
         // Generate a completion
-        let model_response =
-            match self.generate_proxy_completion(&self.settings.model_config.provider.clone()) {
-                Ok(response) => {
-                    log("Generated completion successfully");
-                    response
-                }
-                Err(e) => {
-                    log(&format!("Error generating completion: {}", e));
-                    return Err(format!("Error generating completion: {}", e));
-                }
-            };
+        let model_response = self.generate_proxy_completion(&self.settings.model_config.provider.clone())
+            .map_err(|e| format!("Failed to generate proxy completion: {}", e))?;
+
+        log("Generated completion successfully");
 
         self.add_message(ChatEntry::Completion(model_response.clone()));
 
         let msg = serde_json::to_vec(&ChatStateRequest::ContinueProcessing)
-            .expect("Error serializing message");
-        send(&self.id, &msg).expect("Error sending message");
+            .map_err(|e| format!("Failed to serialize continue processing message: {}", e))?;
+        
+        send(&self.id, &msg)
+            .map_err(|e| format!("Failed to send continue processing message: {}", e))?;
         log("Sent continue processing message");
 
         Ok(())
@@ -564,10 +579,11 @@ impl ChatState {
                         None => {
                             log(&format!("Tool call result: {:?}", result.result));
 
-                            let tool_result = serde_json::from_value::<ToolCallResult>(
-                                result.result.clone().unwrap(),
-                            )
-                            .expect("Error parsing tool call result");
+                            let tool_result_value = result.result
+                                .ok_or("No result field in tool response")?;
+
+                            let tool_result = serde_json::from_value::<ToolCallResult>(tool_result_value)
+                                .map_err(|e| format!("Failed to parse tool call result: {}", e))?;
 
                             MessageContent::ToolResult {
                                 tool_use_id: id,
@@ -688,7 +704,8 @@ impl ChatState {
                 max_tokens: self.settings.max_tokens,
                 disable_parallel_tool_use: None,
                 system: self.settings.system_prompt.clone(),
-                tools: self.get_tools().expect("Error getting tools"),
+                tools: self.get_tools()
+                    .map_err(|e| format!("Failed to get tools for completion: {}", e))?,
                 tool_choice: None,
             },
         };
@@ -698,7 +715,7 @@ impl ChatState {
             .get(proxy_name)
             .ok_or_else(|| format!("Proxy {} not found", proxy_name))?
             .send_to_proxy(request)
-            .expect("Error sending request to proxy");
+            .map_err(|e| format!("Failed to send request to proxy: {}", e))?;
 
         match response {
             ProxyResponse::Completion { completion } => {

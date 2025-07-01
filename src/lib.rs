@@ -43,7 +43,7 @@ impl Guest for Component {
         let mut state = match init_state {
             Some(state) => {
                 let parsed_init_state: InitData = from_slice(&state)
-                    .map_err(|e| format!("Error deserializing init state: {}", e))?;
+                    .map_err(|e| format!("Failed to deserialize init state: {}", e))?;
                 log(&format!(
                     "Chat state actor initialized with conversation_id: {:?}",
                     parsed_init_state.conversation_id
@@ -51,10 +51,10 @@ impl Guest for Component {
 
                 let mut proxies = HashMap::new();
                 let anthropic_proxy = Proxy::new("anthropic", ANTHROPIC_PROXY_MANIFEST)
-                    .map_err(|e| format!("Error spawning anthropic-proxy: {}", e))?;
+                    .map_err(|e| format!("Failed to spawn anthropic-proxy: {}", e))?;
 
                 let google_proxy = Proxy::new("google", GOOGLE_PROXY_MANIFEST)
-                    .map_err(|e| format!("Error spawning google-proxy: {}", e))?;
+                    .map_err(|e| format!("Failed to spawn google-proxy: {}", e))?;
                 proxies.insert("anthropic".to_string(), anthropic_proxy);
                 proxies.insert("google".to_string(), google_proxy);
 
@@ -62,7 +62,7 @@ impl Guest for Component {
                     Some(store_id) => store_id,
                     None => {
                         log("No store_id provided, creating a new store");
-                        new().map_err(|e| format!("Error creating new store: {}", e))?
+                        new().map_err(|e| format!("Failed to create new store: {}", e))?
                     }
                 };
 
@@ -70,7 +70,7 @@ impl Guest for Component {
                     Some(conversation_id) => conversation_id,
                     None => {
                         log("No conversation_id provided, generating a random one");
-                        generate_uuid().map_err(|e| format!("Error generating UUID: {}", e))?
+                        generate_uuid().map_err(|e| format!("Failed to generate UUID: {}", e))?
                     }
                 };
 
@@ -85,14 +85,16 @@ impl Guest for Component {
                                 log("Found existing settings in store");
                                 match store::get(&store_id, &settings_ref) {
                                     Ok(settings) => from_slice(&settings)
-                                        .map_err(|e| format!("Error deserializing settings: {}", e))
+                                        .map_err(|e| {
+                                            format!("Failed to deserialize settings: {}", e)
+                                        })
                                         .unwrap_or_else(|_| {
-                                            log("Error deserializing settings, using default");
+                                            log("Failed to deserialize settings, using default");
                                             ConversationSettings::default()
                                         }),
                                     Err(e) => {
                                         log(&format!(
-                                            "Error retrieving settings from store: {}",
+                                            "Failed to retrieve settings from store: {}",
                                             e
                                         ));
                                         ConversationSettings::default()
@@ -105,7 +107,7 @@ impl Guest for Component {
                             }
                             Err(e) => {
                                 log(&format!(
-                                    "No existing settings found in store, using default: {}",
+                                    "Failed to check for existing settings: {}, using default",
                                     e
                                 ));
                                 ConversationSettings::default()
@@ -123,22 +125,26 @@ impl Guest for Component {
                 );
                 chat_state
                     .store_settings()
-                    .map_err(|e| format!("Error storing settings: {}", e))?;
+                    .map_err(|e| format!("Failed to store initial settings: {}", e))?;
                 chat_state
             }
             None => {
                 log("Chat state actor is not initialized");
-                return Err("Chat state actor is not initialized".to_string());
+                return Err(
+                    "Chat state actor initialization failed: no init state provided".to_string(),
+                );
             }
         };
 
         // Start MCP servers
-        state
-            .start_mcp_servers()
-            .expect("Failed to start MCP servers");
+        if let Err(e) = state.start_mcp_servers() {
+            log(&format!("Failed to start MCP servers: {}", e));
+            return Err(format!("Failed to start MCP servers: {}", e));
+        }
 
         // Serialize the state to bytes
-        let state_bytes = to_vec(&state).map_err(|e| format!("Error serializing state: {}", e))?;
+        let state_bytes =
+            to_vec(&state).map_err(|e| format!("Failed to serialize state: {}", e))?;
         log("Chat state actor initialized successfully");
         Ok((Some(state_bytes),))
     }
@@ -154,7 +160,7 @@ impl MessageServerClient for Component {
 
         // Continue the chain
         let mut chat_state: ChatState = match state {
-            Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
+            Some(s) => from_slice(&s).map_err(|e| format!("Failed to deserialize state: {}", e))?,
             None => return Ok((state,)),
         };
 
@@ -162,66 +168,58 @@ impl MessageServerClient for Component {
             Ok(request) => match request {
                 ChatStateRequest::ContinueProcessing => {
                     log("Received continue processing message");
-                    chat_state
-                        .continue_chain()
-                        .expect("Failed to continue chain");
+                    if let Err(e) = chat_state.continue_chain() {
+                        log(&format!("Failed to continue chain: {}", e));
+                        return Err(format!("Failed to continue processing chain: {}", e));
+                    }
                     let updated_state_bytes = to_vec(&chat_state)
-                        .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                        .map_err(|e| format!("Failed to serialize updated state: {}", e))?;
                     Ok((Some(updated_state_bytes),))
                 }
                 ChatStateRequest::AddMessage { message } => {
                     log(&format!("Adding message: {:?}", message));
                     chat_state.add_message(ChatEntry::Message(message));
                     let updated_state_bytes = to_vec(&chat_state)
-                        .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                        .map_err(|e| format!("Failed to serialize updated state: {}", e))?;
                     Ok((Some(updated_state_bytes),))
                 }
                 ChatStateRequest::GenerateCompletion => {
                     log("Generating completion");
                     if chat_state.pending_completion.is_none() {
                         chat_state.pending_completion = Some("pending_completion".to_string());
-                        match chat_state.generate_completion() {
-                            Ok(_) => {}
-                            Err(e) => {
-                                log(&format!("Error generating completion: {}", e));
-                                return Err(format!("Error generating completion: {}", e));
-                            }
-                        };
+                        if let Err(e) = chat_state.generate_completion() {
+                            log(&format!("Failed to generate completion: {}", e));
+                            return Err(format!("Failed to generate completion: {}", e));
+                        }
                     }
                     let updated_state_bytes = to_vec(&chat_state)
-                        .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                        .map_err(|e| format!("Failed to serialize updated state: {}", e))?;
                     Ok((Some(updated_state_bytes),))
                 }
                 ChatStateRequest::SetHead { head } => {
                     log(&format!("Setting head to: {:?}", head));
-                    match chat_state.set_head(head) {
-                        Ok(_) => {
-                            let updated_state_bytes = to_vec(&chat_state)
-                                .map_err(|e| format!("Error serializing updated state: {}", e))?;
-                            Ok((Some(updated_state_bytes),))
-                        }
-                        Err(e) => {
-                            log(&format!("Error setting head: {}", e));
-                            let updated_state_bytes = to_vec(&chat_state)
-                                .map_err(|e| format!("Error serializing updated state: {}", e))?;
-                            Ok((Some(updated_state_bytes),))
-                        }
+                    if let Err(e) = chat_state.set_head(head) {
+                        log(&format!("Failed to set head: {}", e));
+                        // Don't return error here, just log it
                     }
+                    let updated_state_bytes = to_vec(&chat_state)
+                        .map_err(|e| format!("Failed to serialize updated state: {}", e))?;
+                    Ok((Some(updated_state_bytes),))
                 }
                 _ => {
                     let updated_state_bytes = to_vec(&chat_state)
-                        .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                        .map_err(|e| format!("Failed to serialize updated state: {}", e))?;
                     Ok((Some(updated_state_bytes),))
                 }
             },
             Err(_) => {
                 log(&format!(
-                    "Received message: {}",
+                    "Received unrecognized message: {}",
                     String::from_utf8_lossy(&_data)
                 ));
                 // If the message is not a valid request, just return the state
                 let updated_state_bytes = to_vec(&chat_state)
-                    .map_err(|e| format!("Error serializing updated state: {}", e))?;
+                    .map_err(|e| format!("Failed to serialize updated state: {}", e))?;
                 Ok((Some(updated_state_bytes),))
             }
         }
@@ -244,14 +242,14 @@ impl MessageServerClient for Component {
                     "Chat state actor is not initialized or has no state",
                 );
                 let response_bytes = to_vec(&error_response)
-                    .map_err(|e| format!("Error serializing error response: {}", e))?;
+                    .map_err(|e| format!("Failed to serialize error response: {}", e))?;
                 return Ok((None, (Some(response_bytes),)));
             }
         };
 
         // Deserialize state
         let mut chat_state: ChatState =
-            from_slice(&state_bytes).map_err(|e| format!("Error deserializing state: {}", e))?;
+            from_slice(&state_bytes).map_err(|e| format!("Failed to deserialize state: {}", e))?;
 
         log(&format!(
             "Stringified request data: {}",
@@ -259,16 +257,19 @@ impl MessageServerClient for Component {
         ));
         // Parse request
         let request: ChatStateRequest =
-            from_slice(&data).map_err(|e| format!("Error parsing request: {}", e))?;
+            from_slice(&data).map_err(|e| format!("Failed to parse request: {}", e))?;
 
         // Process request based on action
         let response = match request {
             ChatStateRequest::ContinueProcessing => {
                 log("Continuing processing chain");
-                chat_state
-                    .continue_chain()
-                    .map_err(|e| format!("Error continuing chain: {}", e))?;
-                ChatStateResponse::Success
+                match chat_state.continue_chain() {
+                    Ok(_) => ChatStateResponse::Success,
+                    Err(e) => {
+                        log(&format!("Failed to continue chain: {}", e));
+                        create_error_response("continue_chain_error", &e)
+                    }
+                }
             }
             ChatStateRequest::AddMessage { message } => {
                 chat_state.add_message(ChatEntry::Message(message));
@@ -286,12 +287,12 @@ impl MessageServerClient for Component {
                     };
 
                     let state_bytes = to_vec(&chat_state)
-                        .map_err(|e| format!("Error serializing state: {}", e))?;
+                        .map_err(|e| format!("Failed to serialize state: {}", e))?;
 
                     return Ok((
                         Some(state_bytes),
                         (Some(to_vec(&err).map_err(|e| {
-                            format!("Error serializing error: {}", e)
+                            format!("Failed to serialize error: {}", e)
                         })?),),
                     ));
                 }
@@ -301,13 +302,13 @@ impl MessageServerClient for Component {
                     match chat_state.generate_completion() {
                         Ok(_) => {
                             let state_bytes = to_vec(&chat_state)
-                                .map_err(|e| format!("Error serializing state: {}", e))?;
+                                .map_err(|e| format!("Failed to serialize state: {}", e))?;
 
                             return Ok((Some(state_bytes), (None,)));
                         }
                         Err(e) => {
-                            log(&format!("Error generating completion: {}", e));
-                            return Err(format!("Error generating completion: {}", e));
+                            log(&format!("Failed to generate completion: {}", e));
+                            return Err(format!("Failed to generate completion: {}", e));
                         }
                     }
                 }
@@ -320,7 +321,7 @@ impl MessageServerClient for Component {
                 match chat_state.set_head(head) {
                     Ok(_) => ChatStateResponse::Success,
                     Err(e) => {
-                        log(&format!("Error setting head: {}", e));
+                        log(&format!("Failed to set head: {}", e));
                         create_error_response("set_head_error", &e)
                     }
                 }
@@ -338,7 +339,7 @@ impl MessageServerClient for Component {
                         },
                     },
                     Err(e) => {
-                        log(&format!("Error getting message: {}", e));
+                        log(&format!("Failed to get message: {}", e));
                         create_error_response("message_error", &e)
                     }
                 }
@@ -367,7 +368,7 @@ impl MessageServerClient for Component {
                 match models {
                     Ok(models) => ChatStateResponse::ModelsList { models },
                     Err(e) => {
-                        log(&format!("Error listing models: {}", e));
+                        log(&format!("Failed to list models: {}", e));
                         create_error_response("models_error", &e)
                     }
                 }
@@ -375,7 +376,7 @@ impl MessageServerClient for Component {
             ChatStateRequest::ListTools => match chat_state.list_tools() {
                 Ok(tools) => ChatStateResponse::ToolsList { tools },
                 Err(e) => {
-                    log(&format!("Error listing tools: {}", e));
+                    log(&format!("Failed to list tools: {}", e));
                     create_error_response("tools_error", &e)
                 }
             },
@@ -387,11 +388,11 @@ impl MessageServerClient for Component {
 
         // Serialize updated state
         let updated_state_bytes =
-            to_vec(&chat_state).map_err(|e| format!("Error serializing updated state: {}", e))?;
+            to_vec(&chat_state).map_err(|e| format!("Failed to serialize updated state: {}", e))?;
 
         // Serialize response
         let response_bytes =
-            to_vec(&response).map_err(|e| format!("Error serializing response: {}", e))?;
+            to_vec(&response).map_err(|e| format!("Failed to serialize response: {}", e))?;
 
         Ok((Some(updated_state_bytes), (Some(response_bytes),)))
     }
@@ -410,7 +411,7 @@ impl MessageServerClient for Component {
         let (channel_id, _initial_msg) = params; // Ignore initial message content
 
         let mut chat_state: ChatState = match state {
-            Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
+            Some(s) => from_slice(&s).map_err(|e| format!("Failed to deserialize state: {}", e))?,
             None => {
                 return Ok((
                     state,
@@ -429,7 +430,7 @@ impl MessageServerClient for Component {
 
         // Serialize updated state
         let updated_state_bytes =
-            to_vec(&chat_state).map_err(|e| format!("Error serializing updated state: {}", e))?;
+            to_vec(&chat_state).map_err(|e| format!("Failed to serialize updated state: {}", e))?;
 
         Ok((
             Some(updated_state_bytes),
@@ -449,7 +450,7 @@ impl MessageServerClient for Component {
         let (channel_id,) = params;
 
         let mut chat_state: ChatState = match state {
-            Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
+            Some(s) => from_slice(&s).map_err(|e| format!("Failed to deserialize state: {}", e))?,
             None => return Ok((state,)),
         };
 
@@ -457,7 +458,7 @@ impl MessageServerClient for Component {
         chat_state.remove_subscription_channel(&channel_id);
 
         let updated_state_bytes =
-            to_vec(&chat_state).map_err(|e| format!("Error serializing updated state: {}", e))?;
+            to_vec(&chat_state).map_err(|e| format!("Failed to serialize updated state: {}", e))?;
 
         Ok((Some(updated_state_bytes),))
     }
@@ -469,7 +470,7 @@ impl MessageServerClient for Component {
         let (channel_id, _message) = params;
 
         let mut chat_state: ChatState = match state {
-            Some(s) => from_slice(&s).map_err(|e| format!("Error deserializing state: {}", e))?,
+            Some(s) => from_slice(&s).map_err(|e| format!("Failed to deserialize state: {}", e))?,
             None => return Ok((state,)),
         };
 
@@ -477,7 +478,7 @@ impl MessageServerClient for Component {
         chat_state.add_subscription_channel(channel_id);
 
         let updated_state_bytes =
-            to_vec(&chat_state).map_err(|e| format!("Error serializing updated state: {}", e))?;
+            to_vec(&chat_state).map_err(|e| format!("Failed to serialize updated state: {}", e))?;
 
         Ok((Some(updated_state_bytes),))
     }
@@ -503,17 +504,26 @@ impl SupervisorHandlers for Component {
                 data,
             } => {
                 log("Internal error type");
-                let d = data.unwrap_or(vec![]);
-                let error_str = String::from_utf8_lossy(&d);
-                log(&format!("Error data: {}", error_str));
-                Err(format!("Internal error in child {}: {}", child, error_str))
+                let error_msg = match data {
+                    Some(d) => String::from_utf8_lossy(&d).to_string(),
+                    None => "No error data provided".to_string(),
+                };
+                log(&format!("Error data: {}", error_msg));
+                Err(format!(
+                    "Internal error in child actor {}: {}",
+                    child, error_msg
+                ))
             }
             _ => {
                 log("Other error type");
-                let data = error.data.unwrap();
-                log(&format!("Error data: {:?}", data));
-                let error_str = String::from_utf8_lossy(&data);
-                Err(format!("Other error in child {}: {}", child, error_str))
+                let error_msg = match error.data {
+                    Some(data) => {
+                        log(&format!("Error data: {:?}", data));
+                        String::from_utf8_lossy(&data).to_string()
+                    }
+                    None => "No error data provided".to_string(),
+                };
+                Err(format!("Error in child actor {}: {}", child, error_msg))
             }
         }
     }

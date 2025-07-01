@@ -1,7 +1,7 @@
 use crate::bindings::theater::simple::message_server_host;
 use crate::bindings::theater::simple::runtime::log;
 use crate::bindings::theater::simple::supervisor::spawn;
-use genai_types::{CompletionRequest, CompletionResponse, ProxyRequest, ProxyResponse};
+use genai_types::{ProxyRequest, ProxyResponse};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -28,14 +28,14 @@ impl Proxy {
 
         // Serialize the request
         let request_bytes = serde_json::to_vec(&request)
-            .map_err(|e| format!("Error serializing Anthropic request: {}", e))?;
+            .map_err(|e| format!("Failed to serialize proxy request: {}", e))?;
 
         let response_bytes = message_server_host::request(&self.actor_id, &request_bytes)
-            .map_err(|e| format!("Error sending request to anthropic-proxy: {}", e))?;
+            .map_err(|e| format!("Failed to send request to proxy: {}", e))?;
 
         // Parse the response
         let response: ProxyResponse = serde_json::from_slice(&response_bytes)
-            .map_err(|e| format!("Error parsing Anthropic response: {}", e))?;
+            .map_err(|e| format!("Failed to parse proxy response: {}", e))?;
 
         Ok(response)
     }
