@@ -739,8 +739,21 @@ impl ChatState {
             entry: chat_entry,
         };
 
-        let msg_bytes = to_vec(&chat_msg).expect("Error serializing message for logging");
-        let msg_ref = store::store(&self.store_id, &msg_bytes).expect("Error storing message");
+        // Serialize and store the message
+        let msg_bytes = to_vec(&chat_msg)
+            .map_err(|e| {
+                log(&format!("Failed to serialize message: {}", e));
+                return;
+            })
+            .unwrap();
+        
+        let msg_ref = match store::store(&self.store_id, &msg_bytes) {
+            Ok(msg_ref) => msg_ref,
+            Err(e) => {
+                log(&format!("Failed to store message: {}", e));
+                return;
+            }
+        };
 
         let id = msg_ref.hash.clone();
 
@@ -749,18 +762,24 @@ impl ChatState {
         self.messages.insert(id.clone(), chat_msg.clone());
         self.head = Some(id.clone());
 
-        self.store_head();
+        if let Err(e) = self.store_head() {
+            log(&format!("Failed to store head: {}", e));
+        }
 
         log(&format!("Updated head: {:?}", self.head));
         self.notify_subscribers(chat_msg.clone());
     }
 
-    pub fn store_head(&self) {
+    pub fn store_head(&self) -> Result<(), String> {
         log("Storing head of conversation");
 
-        let head_bytes = to_vec(&self.head).expect("Error serializing head for logging");
+        let head_bytes = to_vec(&self.head)
+            .map_err(|e| format!("Failed to serialize head: {}", e))?;
+        
         store::store_at_label(&self.store_id, &self.conversation_id, &head_bytes)
-            .expect("Error storing head");
+            .map_err(|e| format!("Failed to store head: {}", e))?;
+        
+        Ok(())
     }
 
     pub fn set_head(&mut self, head: Option<String>) -> Result<(), String> {
@@ -775,7 +794,9 @@ impl ChatState {
         }
 
         self.head = head.clone();
-        self.store_head();
+        if let Err(e) = self.store_head() {
+            log(&format!("Failed to store head: {}", e));
+        }
         Ok(())
     }
 
@@ -787,13 +808,23 @@ impl ChatState {
     pub fn notify_subscribers(&self, chat_msg: ChatMessage) {
         log("Notifying subscription channels");
 
-        let head_msg = serde_json::to_vec(&ChatStateResponse::Head {
+        let head_msg = match serde_json::to_vec(&ChatStateResponse::Head {
             head: self.head.clone(),
-        })
-        .expect("Error serializing message");
+        }) {
+            Ok(msg) => msg,
+            Err(e) => {
+                log(&format!("Failed to serialize head message: {}", e));
+                return;
+            }
+        };
 
-        let chat_msg = serde_json::to_vec(&ChatStateResponse::ChatMessage { message: chat_msg })
-            .expect("Error serializing message");
+        let chat_msg = match serde_json::to_vec(&ChatStateResponse::ChatMessage { message: chat_msg }) {
+            Ok(msg) => msg,
+            Err(e) => {
+                log(&format!("Failed to serialize chat message: {}", e));
+                return;
+            }
+        };
 
         for channel_id in &self.subscription_channels {
             log(&format!("Notifying channel: {}", channel_id));
@@ -845,8 +876,13 @@ impl ChatState {
                 match store::get(&self.store_id, &content_ref) {
                     Ok(msg_bytes) => {
                         log(&format!("Found message in store with ID: {}", id));
-                        let message: ChatMessage = serde_json::from_slice(&msg_bytes)
-                            .expect("Error deserializing message");
+                        let message: ChatMessage = match serde_json::from_slice(&msg_bytes) {
+                            Ok(msg) => msg,
+                            Err(e) => {
+                                log(&format!("Failed to deserialize stored message: {}", e));
+                                return Ok(None);
+                            }
+                        };
                         self.messages.insert(id.to_string(), message.clone());
                         Ok(Some(message.clone()))
                     }
@@ -871,11 +907,13 @@ impl ChatState {
         log(&format!("Updated settings: {:?}", self.settings));
 
         // Start or restart MCP servers with new configuration
-        self.start_mcp_servers()
-            .expect("Error starting MCP servers");
+        if let Err(e) = self.start_mcp_servers() {
+            log(&format!("Failed to start MCP servers: {}", e));
+        }
 
-        self.store_settings()
-            .expect("Error storing conversation settings");
+        if let Err(e) = self.store_settings() {
+            log(&format!("Failed to store conversation settings: {}", e));
+        }
     }
 
     /// Add channel to subscriptions (called automatically)
