@@ -538,7 +538,7 @@ impl SupervisorHandlers for Component {
 
     fn handle_child_external_stop(
         state: Option<Vec<u8>>,
-        params: (String,),
+        _params: (String,),
     ) -> Result<(Option<Vec<u8>>,), String> {
         log("Handling child external stop in chat-state");
         Ok((state,))
