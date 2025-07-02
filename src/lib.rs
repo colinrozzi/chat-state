@@ -39,6 +39,11 @@ impl Guest for Component {
     fn init(init_state: Option<Vec<u8>>, params: (String,)) -> Result<(Option<Vec<u8>>,), String> {
         log("Initializing chat-state actor");
         let (param,) = params;
+        log(&format!("Received init param: {}", param));
+        log(&format!(
+            "Init state: {:?}",
+            init_state.as_ref().map(|s| String::from_utf8_lossy(s))
+        ));
 
         let mut state = match init_state {
             Some(state) => {
