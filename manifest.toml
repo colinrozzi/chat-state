@@ -3,70 +3,25 @@ version = "0.1.0"
 component = "/Users/colinrozzi/work/actor-registry/chat-state/./target/wasm32-unknown-unknown/release/chat_state.wasm"
 init_state = "/Users/colinrozzi/work/actor-registry/chat-state/init.json"
 
-[permission_policy.message_server]
-type = "inherit"
-
-[permission_policy.file_system]
-type = "inherit"
-
-[permission_policy.http_client]
-type = "inherit"
-
-[permission_policy.http_framework]
-type = "inherit"
-
-[permission_policy.runtime]
-type = "inherit"
-
-[permission_policy.supervisor]
-type = "inherit"
-
-[permission_policy.store]
-type = "inherit"
-
-[permission_policy.timing]
-type = "inherit"
-
-[permission_policy.process]
-type = "inherit"
-
-[permission_policy.environment]
-type = "inherit"
-
-[permission_policy.random]
-type = "inherit"
-
-[[handlers]]
+[[handler]]
 type = "message-server"
 
-[handlers.config]
-
-[[handlers]]
+[[handler]]
 type = "runtime"
 
-[handlers.config]
-
-[[handlers]]
+[[handler]]
 type = "timing"
-
-[handlers.config]
 max_sleep_duration = 3600000
 min_sleep_duration = 1
 
-[[handlers]]
+[[handler]]
 type = "supervisor"
 
-[handlers.config]
-
-[[handlers]]
+[[handler]]
 type = "store"
 
-[handlers.config]
-
-[[handlers]]
+[[handler]]
 type = "random"
-
-[handlers.config]
 max_bytes = 1048576
 max_int = 9223372036854775807
 allow_crypto_secure = false
